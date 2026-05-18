@@ -1,0 +1,40 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "LRU evicts least recently used entry",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        LRUCache<String> lru = new LRUCache<>(2);\n        lru.put(\"a\",\"A\"); lru.put(\"b\",\"B\");\n        lru.get(\"a\");\n        lru.put(\"c\",\"C\");\n        System.out.println(lru.get(\"b\") == null ? \"OK_LRU_EVICT_B\" : \"FAIL\");\n        System.out.println(lru.get(\"a\") != null ? \"OK_LRU_KEEP_A\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_LRU_EVICT_B", "OK_LRU_KEEP_A"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "LFU evicts least frequently used entry",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        LFUCache<Integer> lfu = new LFUCache<>(2);\n        lfu.put(\"x\", 1); lfu.put(\"y\", 2);\n        lfu.get(\"x\"); lfu.get(\"x\");\n        lfu.get(\"y\");\n        lfu.put(\"z\", 3);\n        System.out.println(lfu.get(\"y\") == null ? \"OK_LFU_EVICT_Y\" : \"FAIL\");\n        System.out.println(lfu.get(\"x\") != null ? \"OK_LFU_KEEP_X\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_LFU_EVICT_Y", "OK_LFU_KEEP_X"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "FIFO evicts first inserted regardless of access",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        FIFOCache<Integer> f = new FIFOCache<>(2);\n        f.put(\"a\",1); f.put(\"b\",2);\n        f.get(\"a\"); f.get(\"a\");\n        f.put(\"c\",3);\n        System.out.println(f.get(\"a\") == null ? \"OK_FIFO_EVICT_A\" : \"FAIL\");\n        System.out.println(f.get(\"b\") != null ? \"OK_FIFO_KEEP_B\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FIFO_EVICT_A", "OK_FIFO_KEEP_B"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "TTL cache expires entries after their TTL",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws InterruptedException {\n        LRUCache<String> base = new LRUCache<>(4);\n        TTLCache<String> ttl = new TTLCache<>(base, 100);\n        ttl.put(\"k\", \"v\");\n        System.out.println(ttl.get(\"k\") != null ? \"OK_TTL_FRESH\" : \"FAIL\");\n        Thread.sleep(150);\n        System.out.println(ttl.get(\"k\") == null ? \"OK_TTL_EXPIRED\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_TTL_FRESH", "OK_TTL_EXPIRED"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "CachingProxy hits real source once then serves from cache",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        SlowDataSource ds = new SlowDataSource();\n        Cache<String> c = new LRUCache<>(4);\n        CachingProxy<String> proxy = new CachingProxy<>(ds, c);\n        String v1 = proxy.load(\"k1\");\n        String v2 = proxy.load(\"k1\");\n        System.out.println(v1.equals(v2) ? \"OK_PROXY_SAMEVAL\" : \"FAIL\");\n        System.out.println(\"OK_PROXY_DONE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["[proxy] MISS k1", "[proxy] HIT k1", "OK_PROXY_SAMEVAL", "OK_PROXY_DONE"],
+      "expectedStdoutNotContains": ["FAIL"]
+    }
+  ]
+}

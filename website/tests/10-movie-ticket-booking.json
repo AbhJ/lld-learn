@@ -1,0 +1,37 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Lock and confirm a booking",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\n\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem system = new BookingSystem();\n        Movie m = new Movie(\"M1\", \"Inception\", \"Sci-Fi\", 148);\n        system.addMovie(m);\n        Screen sc = new Screen(\"SC1\", \"Screen 1\");\n        sc.setupSeats(3, 0, 0, 4);\n        system.addScreen(sc);\n        Show show = system.addShow(m, sc, \"10:00 AM\");\n        boolean lk = system.lockSeats(show.getShowId(), Arrays.asList(\"A1\", \"A2\"), \"u1\");\n        if (!lk) { System.out.println(\"FAIL_LOCK\"); return; }\n        Booking b = system.confirmBooking(show.getShowId(), Arrays.asList(\"A1\", \"A2\"), \"u1\");\n        if (b == null) { System.out.println(\"FAIL_BOOK\"); return; }\n        System.out.println(\"BOOK_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["BOOK_OK"],
+      "expectedStdoutNotContains": ["FAIL_LOCK", "FAIL_BOOK"]
+    },
+    {
+      "name": "Second user cannot lock seat already locked by first",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\n\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem system = new BookingSystem();\n        Movie m = new Movie(\"M1\", \"Movie\", \"Drama\", 120);\n        system.addMovie(m);\n        Screen sc = new Screen(\"SC1\", \"S1\");\n        sc.setupSeats(2, 0, 0, 3);\n        system.addScreen(sc);\n        Show show = system.addShow(m, sc, \"1:00 PM\");\n        boolean a = system.lockSeats(show.getShowId(), Arrays.asList(\"A1\"), \"u1\");\n        boolean b = system.lockSeats(show.getShowId(), Arrays.asList(\"A1\"), \"u2\");\n        if (a && !b) System.out.println(\"LOCK_CONFLICT_OK\");\n        else System.out.println(\"LOCK_CONFLICT_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["LOCK_CONFLICT_OK"]
+    },
+    {
+      "name": "Cancellation releases seat back to available",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\n\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem system = new BookingSystem();\n        Movie m = new Movie(\"M1\", \"X\", \"Y\", 100);\n        system.addMovie(m);\n        Screen sc = new Screen(\"SC1\", \"S\");\n        sc.setupSeats(2, 0, 0, 3);\n        system.addScreen(sc);\n        Show show = system.addShow(m, sc, \"T\");\n        system.lockSeats(show.getShowId(), Arrays.asList(\"A1\"), \"u1\");\n        Booking b = system.confirmBooking(show.getShowId(), Arrays.asList(\"A1\"), \"u1\");\n        if (b == null) { System.out.println(\"FAIL_BOOK\"); return; }\n        if (show.getSeatStatus(\"A1\") != SeatStatus.BOOKED) { System.out.println(\"FAIL_NOT_BOOKED\"); return; }\n        boolean cancelled = system.cancelBooking(b.getBookingId());\n        if (!cancelled) { System.out.println(\"FAIL_CANCEL\"); return; }\n        if (show.getSeatStatus(\"A1\") != SeatStatus.AVAILABLE) { System.out.println(\"FAIL_NOT_AVAIL\"); return; }\n        System.out.println(\"CANCEL_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CANCEL_OK"]
+    },
+    {
+      "name": "Confirming without prior lock is rejected",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\n\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem system = new BookingSystem();\n        Movie m = new Movie(\"M1\", \"X\", \"Y\", 100);\n        system.addMovie(m);\n        Screen sc = new Screen(\"SC1\", \"S\");\n        sc.setupSeats(2, 0, 0, 3);\n        system.addScreen(sc);\n        Show show = system.addShow(m, sc, \"T\");\n        Booking b = system.confirmBooking(show.getShowId(), Arrays.asList(\"A1\"), \"u1\");\n        System.out.println(b == null ? \"CONFIRM_REJECTED\" : \"WRONG_CONFIRMED\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CONFIRM_REJECTED"],
+      "expectedStdoutNotContains": ["WRONG_CONFIRMED"]
+    },
+    {
+      "name": "Mixed VIP and regular seat pricing totals correctly",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\n\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem system = new BookingSystem();\n        Movie m = new Movie(\"M1\", \"X\", \"Y\", 100);\n        system.addMovie(m);\n        Screen sc = new Screen(\"SC1\", \"S\");\n        sc.setupSeats(2, 0, 1, 2);\n        system.addScreen(sc);\n        Show show = system.addShow(m, sc, \"T\");\n        system.lockSeats(show.getShowId(), Arrays.asList(\"A1\", \"B1\"), \"u1\");\n        Booking b = system.confirmBooking(show.getShowId(), Arrays.asList(\"A1\", \"B1\"), \"u1\");\n        if (b == null) { System.out.println(\"FAIL\"); return; }\n        double total = b.getTotalAmount();\n        System.out.println(Math.abs(total - 35.0) < 0.01 ? \"PRICE_OK\" : \"PRICE_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["PRICE_OK"]
+    }
+  ]
+}

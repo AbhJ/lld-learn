@@ -1,0 +1,26 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Logger.getLogger returns same instance per name (singleton)",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Logger.resetAll();\n        Logger l1 = Logger.getLogger(\"App\");\n        Logger l2 = Logger.getLogger(\"App\");\n        System.out.println(l1 == l2 ? \"SINGLETON_OK\" : \"SINGLETON_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["SINGLETON_OK"],
+      "expectedStdoutNotContains": ["SINGLETON_FAIL"]
+    },
+    {
+      "name": "WARN level config drops DEBUG and INFO messages",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Logger.resetAll();\n        FileAppender fa = new FileAppender(\"test.log\");\n        LoggerConfig cfg = new LoggerConfig().setLevel(LogLevel.WARN).setFormatter(new SimpleFormatter()).addAppender(fa);\n        Logger lg = Logger.getLogger(\"X\");\n        lg.setConfig(cfg);\n        lg.debug(\"d\"); lg.info(\"i\"); lg.warn(\"w\"); lg.error(\"e\");\n        System.out.println(fa.getLineCount() == 2 ? \"FILTER_OK\" : \"FILTER_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["FILTER_OK"],
+      "expectedStdoutNotContains": ["FILTER_FAIL"]
+    },
+    {
+      "name": "AsyncAppender buffers until threshold then flushes",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Logger.resetAll();\n        FileAppender fa = new FileAppender(\"a.log\");\n        AsyncAppender async = new AsyncAppender(fa, 3);\n        LoggerConfig cfg = new LoggerConfig().setLevel(LogLevel.DEBUG).setFormatter(new SimpleFormatter()).addAppender(async);\n        Logger lg = Logger.getLogger(\"Y\");\n        lg.setConfig(cfg);\n        lg.info(\"m1\"); lg.info(\"m2\");\n        int beforeFlush = fa.getLineCount();\n        lg.info(\"m3\");\n        int afterFlush = fa.getLineCount();\n        System.out.println((beforeFlush == 0 && afterFlush == 3) ? \"ASYNC_OK\" : \"ASYNC_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["ASYNC_OK"],
+      "expectedStdoutNotContains": ["ASYNC_FAIL"]
+    }
+  ]
+}

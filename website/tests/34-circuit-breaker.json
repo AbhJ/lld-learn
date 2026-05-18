@@ -1,0 +1,24 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Closed state executes successful call",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        CircuitBreakerConfig cfg = new CircuitBreakerConfig(3, 500, 2);\n        CircuitBreaker cb = new CircuitBreaker(\"S\", cfg);\n        ServiceCall<String> call = () -> \"OK\";\n        String r = cb.execute(call);\n        System.out.println(\"RESULT=\" + r + \" STATE=\" + cb.getStateName());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["RESULT=OK", "STATE=CLOSED"]
+    },
+    {
+      "name": "Threshold failures trip breaker to OPEN",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        CircuitBreakerConfig cfg = new CircuitBreakerConfig(3, 5000, 2);\n        CircuitBreaker cb = new CircuitBreaker(\"S\", cfg);\n        ServiceCall<String> bad = () -> { throw new RuntimeException(\"boom\"); };\n        for (int i = 0; i < 3; i++) { try { cb.execute(bad); } catch (Exception ignore) {} }\n        System.out.println(\"FINAL_STATE=\" + cb.getStateName());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["FINAL_STATE=OPEN"]
+    },
+    {
+      "name": "OPEN state fails fast without invoking call",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        CircuitBreakerConfig cfg = new CircuitBreakerConfig(2, 60000, 2);\n        CircuitBreaker cb = new CircuitBreaker(\"S\", cfg);\n        ServiceCall<String> bad = () -> { throw new RuntimeException(\"boom\"); };\n        for (int i = 0; i < 2; i++) { try { cb.execute(bad); } catch (Exception ignore) {} }\n        final int[] invoked = {0};\n        ServiceCall<String> good = () -> { invoked[0]++; return \"OK\"; };\n        try { cb.execute(good); System.out.println(\"WRONG\"); } catch (RuntimeException e) { System.out.println(\"REJECTED:\" + e.getMessage() + \" invoked=\" + invoked[0]); }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["REJECTED:Circuit OPEN", "invoked=0"],
+      "expectedStdoutNotContains": ["WRONG"]
+    }
+  ]
+}

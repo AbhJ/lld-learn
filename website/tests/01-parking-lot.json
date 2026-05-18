@@ -1,0 +1,30 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Single car parks and gets a ticket",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ParkingLot lot = ParkingLot.getInstance();\n        lot.addLevel(1, 1, 1);\n        Ticket t = lot.parkVehicle(new Car(\"TEST-1\"));\n        if (t == null) { System.out.println(\"FAIL: no ticket\"); System.exit(1); }\n        System.out.println(\"got ticket: \" + t.getTicketId());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["got ticket: T-"]
+    },
+    {
+      "name": "Truck cannot park where only motorcycle spots exist",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ParkingLot lot = ParkingLot.getInstance();\n        lot.addLevel(5, 0, 0);\n        Ticket t = lot.parkVehicle(new Truck(\"TRUCK-1\"));\n        System.out.println(t == null ? \"REJECTED\" : \"WRONG: parked\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["REJECTED"],
+      "expectedStdoutNotContains": ["WRONG"]
+    },
+    {
+      "name": "Park then unpark restores availability",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ParkingLot lot = ParkingLot.getInstance();\n        lot.addLevel(0, 1, 0);\n        Ticket t = lot.parkVehicle(new Car(\"AB-9\"));\n        if (t == null) { System.out.println(\"FAIL: park\"); System.exit(1); }\n        double fee = lot.unparkVehicle(t.getTicketId());\n        if (fee < 0) { System.out.println(\"FAIL: unpark\"); System.exit(1); }\n        Ticket t2 = lot.parkVehicle(new Car(\"AB-10\"));\n        System.out.println(t2 != null ? \"REPARK_OK\" : \"REPARK_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["REPARK_OK"]
+    },
+    {
+      "name": "Lot full rejects further parking",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ParkingLot lot = ParkingLot.getInstance();\n        lot.addLevel(0, 1, 0);\n        Ticket t1 = lot.parkVehicle(new Car(\"X1\"));\n        Ticket t2 = lot.parkVehicle(new Car(\"X2\"));\n        System.out.println(t1 != null && t2 == null ? \"FULL_OK\" : \"FULL_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["FULL_OK"]
+    }
+  ]
+}

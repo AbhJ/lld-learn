@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Adding stock to a single warehouse updates total",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        InventorySystem s = new InventorySystem();\n        s.addProduct(new Product(\"X1\", \"Widget\", 5.0, 10));\n        s.addWarehouse(new Warehouse(\"W1\", \"Main\", \"NYC\"));\n        s.addStock(\"X1\", \"W1\", 100);\n        if (s.getTotalStock(\"X1\") == 100) System.out.println(\"STOCK_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["STOCK_OK"]
+    },
+    {
+      "name": "Total stock sums across warehouses; transfer preserves total",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        InventorySystem s = new InventorySystem();\n        s.addProduct(new Product(\"X1\", \"Widget\", 5.0, 10));\n        s.addWarehouse(new Warehouse(\"W1\", \"Main\", \"NYC\"));\n        s.addWarehouse(new Warehouse(\"W2\", \"Branch\", \"LAX\"));\n        s.addStock(\"X1\", \"W1\", 50);\n        s.addStock(\"X1\", \"W2\", 30);\n        if (s.getTotalStock(\"X1\") == 80) System.out.println(\"MULTI_OK\");\n        s.transfer(\"X1\", \"W1\", \"W2\", 20);\n        if (s.getTotalStock(\"X1\") == 80) System.out.println(\"XFER_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["MULTI_OK", "XFER_OK"]
+    },
+    {
+      "name": "Removing stock below reorder point records a low-stock alert",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        InventorySystem s = new InventorySystem();\n        s.addProduct(new Product(\"X1\", \"Widget\", 5.0, 10));\n        s.addWarehouse(new Warehouse(\"W1\", \"Main\", \"NYC\"));\n        s.addStock(\"X1\", \"W1\", 15);\n        s.removeStock(\"X1\", \"W1\", 8);\n        if (s.getAlerts().size() == 1) System.out.println(\"ALERT_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["ALERT_OK"]
+    },
+    {
+      "name": "removeStock returns false when warehouse cannot fulfil quantity",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        InventorySystem s = new InventorySystem();\n        s.addProduct(new Product(\"X1\", \"Widget\", 5.0, 10));\n        s.addWarehouse(new Warehouse(\"W1\", \"Main\", \"NYC\"));\n        s.addStock(\"X1\", \"W1\", 5);\n        boolean ok = s.removeStock(\"X1\", \"W1\", 100);\n        if (!ok) System.out.println(\"INSUFFICIENT_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["INSUFFICIENT_OK"]
+    },
+    {
+      "name": "Custom LowStockListener fires on low-stock event",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        InventorySystem s = new InventorySystem();\n        final int[] count = {0};\n        s.addListener((sku, wh, qty) -> { count[0]++; System.out.println(\"LISTENER_FIRED:\" + sku + \":\" + qty); });\n        s.addProduct(new Product(\"X1\", \"Widget\", 5.0, 10));\n        s.addWarehouse(new Warehouse(\"W1\", \"Main\", \"NYC\"));\n        s.addStock(\"X1\", \"W1\", 12);\n        s.removeStock(\"X1\", \"W1\", 5);\n        if (count[0] == 1) System.out.println(\"OBSERVER_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["LISTENER_FIRED:X1:7", "OBSERVER_OK"]
+    }
+  ]
+}

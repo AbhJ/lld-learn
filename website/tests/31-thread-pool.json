@@ -1,0 +1,24 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Pool executes all submitted tasks",
+      "driver": "/* Test driver */\nimport java.util.concurrent.atomic.AtomicInteger;\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        ThreadPool pool = new ThreadPool(new PoolConfig(2, 4, 10, 1000));\n        AtomicInteger c = new AtomicInteger();\n        for (int i = 0; i < 5; i++) {\n            pool.submit(new Task() {\n                public String getName() { return \"T\"; }\n                public void execute() { try { Thread.sleep(20); } catch (Exception e) {} c.incrementAndGet(); }\n            });\n        }\n        pool.shutdown();\n        System.out.println(\"OK_BASIC=\" + c.get());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_BASIC=5"]
+    },
+    {
+      "name": "AbortPolicy rejects when queue is full",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        ThreadPool pool = new ThreadPool(new PoolConfig(1, 1, 1, 1000));\n        pool.setRejectionPolicy(new AbortPolicy());\n        Task slow = new Task() {\n            public String getName() { return \"S\"; }\n            public void execute() { try { Thread.sleep(50); } catch (Exception e) {} }\n        };\n        pool.submit(slow); Thread.sleep(10); pool.submit(slow);\n        try { pool.submit(slow); System.out.println(\"WRONG\"); }\n        catch (RuntimeException e) { System.out.println(\"OK_REJECTED\"); }\n        pool.shutdownNow();\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_REJECTED"],
+      "expectedStdoutNotContains": ["WRONG"]
+    },
+    {
+      "name": "Stats track completed tasks accurately",
+      "driver": "/* Test driver */\nimport java.util.concurrent.atomic.AtomicInteger;\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        ThreadPool pool = new ThreadPool(new PoolConfig(2, 3, 10, 1000));\n        AtomicInteger c = new AtomicInteger();\n        for (int i = 0; i < 8; i++) {\n            pool.submit(new Task() {\n                public String getName() { return \"S\"; }\n                public void execute() { try { Thread.sleep(30); } catch (Exception e) {} c.incrementAndGet(); }\n            });\n        }\n        pool.shutdown();\n        System.out.println(\"OK_STATS completed=\" + pool.getStats().getCompletedTasks() + \" count=\" + c.get());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_STATS completed=8 count=8"]
+    }
+  ]
+}

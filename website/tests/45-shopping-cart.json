@@ -1,0 +1,26 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Subtotal sums item prices times quantities",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ShoppingCart cart = new ShoppingCart(\"CA\");\n        cart.addItem(new Product(\"p1\",\"Widget\",100.00,\"X\"), 2);\n        double sub = cart.getSubtotal();\n        if (Math.abs(sub - 200.00) < 0.01) System.out.println(\"SUBTOTAL_OK\");\n        else System.out.println(\"SUBTOTAL_FAIL: \" + sub);\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["SUBTOTAL_OK"],
+      "expectedStdoutNotContains": ["SUBTOTAL_FAIL"]
+    },
+    {
+      "name": "CompositeDiscount sums child strategy discounts",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ShoppingCart cart = new ShoppingCart(\"CA\");\n        cart.addItem(new Product(\"p1\",\"Widget\",100.00,\"X\"), 1);\n        DiscountStrategy combo = new CompositeDiscount(\n                new PercentageDiscount(10),\n                new FlatDiscount(20.00));\n        double d = combo.calculateDiscount(cart.getItems());\n        if (Math.abs(d - 30.00) < 0.01) System.out.println(\"COMPOSITE_OK\");\n        else System.out.println(\"COMPOSITE_FAIL: \" + d);\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["COMPOSITE_OK"],
+      "expectedStdoutNotContains": ["COMPOSITE_FAIL"]
+    },
+    {
+      "name": "Coupon honored above min, rejected below min",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ShoppingCart cart = new ShoppingCart(\"CA\");\n        cart.addItem(new Product(\"p1\",\"Widget\",100.00,\"X\"), 1);\n        boolean ok = cart.applyCoupon(new Coupon(\"SAVE10\", new FlatDiscount(10.00), 50.0));\n        boolean bad = cart.applyCoupon(new Coupon(\"BIGMIN\", new FlatDiscount(10.00), 500.0));\n        if (ok && !bad) System.out.println(\"COUPON_OK\");\n        else System.out.println(\"COUPON_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["COUPON_OK"],
+      "expectedStdoutNotContains": ["COUPON_FAIL"]
+    }
+  ]
+}

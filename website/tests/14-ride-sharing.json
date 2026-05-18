@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Request, start, complete trip end-to-end with payment",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RideService svc = new RideService();\n        Location a = new Location(40.7128, -74.0060, \"A\");\n        Location b = new Location(40.6413, -73.7781, \"B\");\n        Driver d1 = new Driver(\"D1\", \"Bob\", \"Economy\", \"P1\", new Location(40.7150, -74.0030, \"Near\"));\n        svc.registerDriver(d1);\n        Rider r = new Rider(\"R1\", \"Alice\", \"555\", a);\n        Trip t = svc.requestRide(r, a, b);\n        svc.startTrip(t);\n        Payment p = svc.completeTrip(t, Payment.Method.CREDIT_CARD);\n        if (t.getState() == TripState.COMPLETED && t.getFare() > 0) System.out.println(\"RIDE_OK_1\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["RIDE_OK_1"]
+    },
+    {
+      "name": "Request with no drivers cancels trip",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RideService svc = new RideService();\n        Location a = new Location(40.0, -74.0, \"A\");\n        Location b = new Location(40.5, -74.0, \"B\");\n        Rider r = new Rider(\"R1\", \"Alice\", \"555\", a);\n        Trip t = svc.requestRide(r, a, b);\n        if (t.getState() == TripState.CANCELLED) System.out.println(\"NO_DRIVER_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["NO_DRIVER_OK"]
+    },
+    {
+      "name": "Surge pricing doubles base fare estimate",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RideService svc = new RideService();\n        Location a = new Location(40.0, -74.0, \"A\");\n        Location b = new Location(40.5, -74.0, \"B\");\n        double base = svc.estimateFare(a, b, \"Economy\");\n        svc.activateSurge(2.0);\n        double surge = svc.estimateFare(a, b, \"Economy\");\n        if (Math.abs(surge - base * 2.0) < 0.01) System.out.println(\"SURGE_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["SURGE_OK"]
+    },
+    {
+      "name": "Cancel trip returns driver to AVAILABLE",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RideService svc = new RideService();\n        Location a = new Location(40.0, -74.0, \"A\");\n        Location b = new Location(40.5, -74.0, \"B\");\n        Driver d1 = new Driver(\"D1\", \"Bob\", \"Economy\", \"P1\", new Location(40.0, -74.0, \"Near\"));\n        svc.registerDriver(d1);\n        Rider r = new Rider(\"R1\", \"Alice\", \"555\", a);\n        Trip t = svc.requestRide(r, a, b);\n        boolean before = !d1.isAvailable();\n        svc.cancelTrip(t);\n        if (before && d1.isAvailable() && t.getState() == TripState.CANCELLED) System.out.println(\"CANCEL_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CANCEL_OK"]
+    },
+    {
+      "name": "HighestRatedStrategy prefers higher-rated over closer driver",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RideService svc = new RideService();\n        Location a = new Location(40.0, -74.0, \"A\");\n        Driver near = new Driver(\"D1\", \"Bob\", \"Economy\", \"P1\", new Location(40.001, -74.0, \"VeryNear\"));\n        Driver far = new Driver(\"D2\", \"Carol\", \"Economy\", \"P2\", new Location(40.05, -74.0, \"Far\"));\n        far.addRating(5.0); far.addRating(5.0);\n        near.addRating(3.0);\n        svc.registerDriver(near);\n        svc.registerDriver(far);\n        svc.setMatchingStrategy(new HighestRatedStrategy(20.0));\n        Rider r = new Rider(\"R1\", \"Alice\", \"555\", a);\n        Trip t = svc.requestRide(r, a, new Location(40.5, -74.0, \"B\"));\n        if (t.getDriver() == far) System.out.println(\"HIGHEST_RATED_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["HIGHEST_RATED_OK"]
+    }
+  ]
+}

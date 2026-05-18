@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Booking economy seat returns booking with BK id",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Booking.resetCounter();\n        AirlineSystem a = new AirlineSystem();\n        Flight f = new Flight(\"F1\", \"NYC\", \"LAX\", 100.00);\n        f.addSeats(2, 0, 0);\n        a.addFlight(f);\n        Booking b = a.book(new Passenger(\"A\", \"a@x\"), f, \"ECONOMY\");\n        if (b != null && b.getId().startsWith(\"BK\")) System.out.println(\"BOOK_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["BOOK_OK"]
+    },
+    {
+      "name": "Booking returns null when class is sold out",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Booking.resetCounter();\n        AirlineSystem a = new AirlineSystem();\n        Flight f = new Flight(\"F1\", \"NYC\", \"LAX\", 100.00);\n        f.addSeats(1, 0, 0);\n        a.addFlight(f);\n        Booking ok = a.book(new Passenger(\"A\", \"\"), f, \"ECONOMY\");\n        Booking bad = a.book(new Passenger(\"B\", \"\"), f, \"ECONOMY\");\n        if (ok != null && bad == null) System.out.println(\"SOLD_OUT_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["SOLD_OUT_OK"]
+    },
+    {
+      "name": "Cancel releases the seat for rebooking",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Booking.resetCounter();\n        AirlineSystem a = new AirlineSystem();\n        Flight f = new Flight(\"F1\", \"NYC\", \"LAX\", 100.00);\n        f.addSeats(1, 0, 0);\n        a.addFlight(f);\n        Booking b = a.book(new Passenger(\"A\", \"\"), f, \"ECONOMY\");\n        a.cancel(b);\n        if (f.getAvailable(\"ECONOMY\") == 1) System.out.println(\"CANCEL_OK\");\n        Booking b2 = a.book(new Passenger(\"B\", \"\"), f, \"ECONOMY\");\n        if (b2 != null) System.out.println(\"REBOOK_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CANCEL_OK", "REBOOK_OK"]
+    },
+    {
+      "name": "Search filters flights by origin and destination",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Booking.resetCounter();\n        AirlineSystem a = new AirlineSystem();\n        Flight f1 = new Flight(\"F1\", \"NYC\", \"LAX\", 100.0); f1.addSeats(1,0,0);\n        Flight f2 = new Flight(\"F2\", \"BOS\", \"LAX\", 200.0); f2.addSeats(1,0,0);\n        a.addFlight(f1); a.addFlight(f2);\n        int n = a.search(\"NYC\", \"LAX\").size();\n        int z = a.search(\"XXX\", \"LAX\").size();\n        if (n == 1 && z == 0) System.out.println(\"SEARCH_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["SEARCH_OK"]
+    },
+    {
+      "name": "Class multipliers price economy/business/first as 1x/2.5x/4x",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Booking.resetCounter();\n        AirlineSystem a = new AirlineSystem();\n        Flight f = new Flight(\"F1\", \"NYC\", \"LAX\", 100.00);\n        f.addSeats(1, 1, 1);\n        a.addFlight(f);\n        Booking eco = a.book(new Passenger(\"E\", \"\"), f, \"ECONOMY\");\n        Booking biz = a.book(new Passenger(\"B\", \"\"), f, \"BUSINESS\");\n        Booking fst = a.book(new Passenger(\"F\", \"\"), f, \"FIRST\");\n        if (eco.getPrice() == 100.0 && biz.getPrice() == 250.0 && fst.getPrice() == 400.0) System.out.println(\"PRICE_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["PRICE_OK"]
+    }
+  ]
+}

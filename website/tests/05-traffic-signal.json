@@ -1,0 +1,23 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "State pattern: signal advances RED -> GREEN -> YELLOW -> RED",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        TrafficSignal s = new TrafficSignal(\"S1\", \"NS\");\n        if (s.getState() != SignalState.RED) { System.out.println(\"FAIL: initial\"); System.exit(1); }\n        s.advance();\n        if (s.getState() != SignalState.GREEN) { System.out.println(\"FAIL: green\"); System.exit(1); }\n        s.advance();\n        if (s.getState() != SignalState.YELLOW) { System.out.println(\"FAIL: yellow\"); System.exit(1); }\n        s.advance();\n        if (s.getState() != SignalState.RED) { System.out.println(\"FAIL: red\"); System.exit(1); }\n        System.out.println(\"OK_CYCLE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CYCLE"]
+    },
+    {
+      "name": "Intersection cycles green direction after timer expires",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Intersection it = new Intersection(\"X\", 2, 1);\n        it.addSignal(\"NS\"); it.addSignal(\"EW\");\n        it.initialize(new String[]{\"NS\",\"EW\"});\n        if (it.getSignal(\"NS\").getState() != SignalState.GREEN) { System.out.println(\"FAIL: init\"); System.exit(1); }\n        it.tick(); it.tick(); it.tick();\n        if (it.getSignal(\"EW\").getState() != SignalState.GREEN) { System.out.println(\"FAIL: switch\"); System.exit(1); }\n        System.out.println(\"OK_SWITCH\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_SWITCH"]
+    },
+    {
+      "name": "Emergency override forces direction green and freezes ticks",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Intersection it = new Intersection(\"X\", 5, 2);\n        it.addSignal(\"NS\"); it.addSignal(\"EW\");\n        it.initialize(new String[]{\"NS\",\"EW\"});\n        it.emergencyOverride(\"EW\");\n        if (it.getSignal(\"EW\").getState() != SignalState.GREEN) { System.out.println(\"FAIL: ew\"); System.exit(1); }\n        if (it.getSignal(\"NS\").getState() != SignalState.RED) { System.out.println(\"FAIL: ns\"); System.exit(1); }\n        for (int i = 0; i < 20; i++) it.tick();\n        if (it.getSignal(\"EW\").getState() != SignalState.GREEN) { System.out.println(\"FAIL: frozen\"); System.exit(1); }\n        System.out.println(\"OK_EMERGENCY\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_EMERGENCY"]
+    }
+  ]
+}

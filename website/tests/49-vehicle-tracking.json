@@ -1,0 +1,23 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "registerVehicle and updateLocation compute speed",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        TrackingService s = new TrackingService(80.0);\n        Vehicle v = s.registerVehicle(\"v1\", \"Truck-001\", \"Truck\");\n        s.updateLocation(\"v1\", new Location(37.7749, -122.4194), 0);\n        s.updateLocation(\"v1\", new Location(37.7755, -122.4160), 10);\n        System.out.println(\"OK_1 NAME=\" + v.getName() + \" HAS_SPEED=\" + (v.getCurrentSpeedKmh() > 0));\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_1 NAME=Truck-001 HAS_SPEED=true"]
+    },
+    {
+      "name": "AlertListener fires on speeding",
+      "driver": "/* Test driver */\nimport java.util.concurrent.atomic.AtomicInteger;\npublic class Main {\n    public static void main(String[] args) {\n        TrackingService s = new TrackingService(80.0);\n        AtomicInteger c = new AtomicInteger(0);\n        s.addListener(a -> { if (a.getType() == Alert.AlertType.SPEEDING) c.incrementAndGet(); });\n        s.registerVehicle(\"v2\", \"Car-002\", \"Car\");\n        s.updateLocation(\"v2\", new Location(37.7749, -122.4194), 0);\n        s.updateLocation(\"v2\", new Location(37.7900, -122.4000), 3);\n        System.out.println(\"OK_2 SPEEDING_COUNT=\" + c.get());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_2 SPEEDING_COUNT=1"]
+    },
+    {
+      "name": "Geofence exit triggers alert via listener",
+      "driver": "/* Test driver */\nimport java.util.concurrent.atomic.AtomicInteger;\npublic class Main {\n    public static void main(String[] args) {\n        TrackingService s = new TrackingService(200.0);\n        AtomicInteger enter = new AtomicInteger(0), exit = new AtomicInteger(0);\n        s.addListener(a -> { if (a.getType()==Alert.AlertType.GEOFENCE_ENTER) enter.incrementAndGet(); else if (a.getType()==Alert.AlertType.GEOFENCE_EXIT) exit.incrementAndGet(); });\n        s.registerVehicle(\"v3\", \"Van\", \"Van\");\n        s.addGeoFence(\"gf1\", \"WH\", new Location(37.7749, -122.4194), 500);\n        s.updateLocation(\"v3\", new Location(37.7748, -122.4195), 0);\n        s.updateLocation(\"v3\", new Location(37.7900, -122.4000), 60);\n        System.out.println(\"OK_3 ENTER=\" + enter.get() + \" EXIT=\" + exit.get());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_3 ENTER=0 EXIT=1"]
+    }
+  ]
+}

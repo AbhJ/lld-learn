@@ -1,0 +1,23 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Subscribe and publish invokes handler",
+      "driver": "/* Test driver */\nimport java.util.concurrent.atomic.AtomicInteger;\npublic class Main {\n    public static void main(String[] args) {\n        EventBus bus = new EventBus();\n        AtomicInteger count = new AtomicInteger();\n        bus.subscribe(new EventHandler() { public void handle(Event e) { count.incrementAndGet(); } public String getName() { return \"H\"; } }, UserEvent.class);\n        bus.publish(new UserEvent(\"LOGIN\", \"alice\"));\n        bus.publish(new UserEvent(\"LOGIN\", \"bob\"));\n        System.out.println(\"OK_1 COUNT=\" + count.get());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_1 COUNT=2"]
+    },
+    {
+      "name": "Filter blocks unmatched events",
+      "driver": "/* Test driver */\nimport java.util.concurrent.atomic.AtomicInteger;\npublic class Main {\n    public static void main(String[] args) {\n        EventBus bus = new EventBus();\n        AtomicInteger count = new AtomicInteger();\n        bus.subscribe(new EventHandler() { public void handle(Event e) { count.incrementAndGet(); } public String getName() { return \"VIP\"; } }, UserEvent.class, 10, ev -> ((UserEvent)ev).getUsername().equals(\"admin\"));\n        bus.publish(new UserEvent(\"A\", \"regular\"));\n        bus.publish(new UserEvent(\"A\", \"admin\"));\n        System.out.println(\"OK_2 COUNT=\" + count.get());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_2 COUNT=1"]
+    },
+    {
+      "name": "Dead-letter queue captures unhandled events",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        EventBus bus = new EventBus();\n        bus.publish(new Event(\"ORPHAN_1\"));\n        bus.publish(new Event(\"ORPHAN_2\"));\n        System.out.println(\"OK_3 DLQ=\" + bus.getDeadLetterQueue().size());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_3 DLQ=2"]
+    }
+  ]
+}

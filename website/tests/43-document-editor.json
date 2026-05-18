@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Insert text builds expected content",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        DocumentEditor ed = new DocumentEditor(\"doc\");\n        ed.insertText(0, \"Hello\");\n        ed.insertText(5, \" World\");\n        if (ed.getDocument().getFullText().equals(\"Hello World\")) System.out.println(\"OK_INSERT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_INSERT"]
+    },
+    {
+      "name": "Undo then redo restores edits",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        DocumentEditor ed = new DocumentEditor(\"doc\");\n        ed.insertText(0, \"Hello\");\n        ed.insertText(5, \" World\");\n        ed.undo();\n        if (ed.getDocument().getFullText().equals(\"Hello\")) {\n            ed.redo();\n            if (ed.getDocument().getFullText().equals(\"Hello World\")) System.out.println(\"OK_UNDO_REDO\");\n        }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_UNDO_REDO"]
+    },
+    {
+      "name": "Save and restore prior version",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        DocumentEditor ed = new DocumentEditor(\"doc\");\n        ed.insertText(0, \"Hello\");\n        String v1 = ed.saveVersion(\"alice\", \"v1\");\n        ed.insertText(5, \" World\");\n        ed.saveVersion(\"alice\", \"v2\");\n        ed.restoreVersion(v1);\n        if (ed.getDocument().getFullText().equals(\"Hello\")) System.out.println(\"OK_VERSION\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_VERSION"]
+    },
+    {
+      "name": "Format applies BOLD to a range",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        DocumentEditor ed = new DocumentEditor(\"doc\");\n        ed.insertText(0, \"Hello World\");\n        ed.formatText(0, 5, Formatting.Style.BOLD);\n        boolean found = false;\n        for (TextSegment s : ed.getDocument().getSegments()) {\n            if (s.getFormatting().hasStyle(Formatting.Style.BOLD)) found = true;\n        }\n        if (found) System.out.println(\"OK_FORMAT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FORMAT"]
+    },
+    {
+      "name": "Collaborator cursor moves to position",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        DocumentEditor ed = new DocumentEditor(\"doc\");\n        ed.insertText(0, \"Hello World\");\n        Collaborator c = ed.addCollaborator(\"alice\", \"Alice\");\n        c.getCursor().moveTo(5);\n        if (c.getCursor().getPosition() == 5 && c.getName().equals(\"Alice\")) System.out.println(\"OK_COLLAB\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_COLLAB"]
+    }
+  ]
+}

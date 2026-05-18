@@ -1,0 +1,36 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Direct chat stores message in history",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ChatService cs = new ChatService();\n        User a = cs.registerUser(\"Alice\");\n        User b = cs.registerUser(\"Bob\");\n        ChatRoom dc = cs.createDirectChat(a.getId(), b.getId());\n        cs.sendMessage(dc.getId(), a.getId(), \"hello\");\n        if (cs.getMessageHistory(dc.getId()).size() == 1) System.out.println(\"DM_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["DM_OK"]
+    },
+    {
+      "name": "Group chat accepts members and stores per-room history",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        ChatService cs = new ChatService();\n        User a = cs.registerUser(\"Alice\");\n        User b = cs.registerUser(\"Bob\");\n        User c = cs.registerUser(\"Charlie\");\n        ChatRoom g = cs.createGroupChat(\"Team\", a.getId(), Arrays.asList(a.getId(), b.getId(), c.getId()));\n        cs.sendMessage(g.getId(), a.getId(), \"hi all\");\n        cs.sendMessage(g.getId(), b.getId(), \"hey\");\n        if (cs.getMessageHistory(g.getId()).size() == 2 && \"GROUP\".equals(g.getRoomType())) System.out.println(\"GROUP_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["GROUP_OK"]
+    },
+    {
+      "name": "Image and File messages render with correct prefixes",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ChatService cs = new ChatService();\n        User a = cs.registerUser(\"Alice\");\n        User b = cs.registerUser(\"Bob\");\n        ChatRoom dc = cs.createDirectChat(a.getId(), b.getId());\n        cs.sendMessage(dc.getId(), a.getId(), \"photo.jpg\", Message.MessageType.IMAGE);\n        cs.sendMessage(dc.getId(), b.getId(), \"doc.pdf\", Message.MessageType.FILE);\n        java.util.List<Message> hist = cs.getMessageHistory(dc.getId());\n        if (hist.get(0).getType() == Message.MessageType.IMAGE\n            && hist.get(1).getType() == Message.MessageType.FILE\n            && hist.get(0).getDisplayText().startsWith(\"[Image:\")) System.out.println(\"TYPES_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["TYPES_OK"]
+    },
+    {
+      "name": "Sending from a non-participant throws IllegalArgumentException",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ChatService cs = new ChatService();\n        User a = cs.registerUser(\"Alice\");\n        User b = cs.registerUser(\"Bob\");\n        ChatRoom dc = cs.createDirectChat(a.getId(), b.getId());\n        try {\n            cs.sendMessage(dc.getId(), \"user_999\", \"x\");\n            System.out.println(\"WRONG_NO_THROW\");\n        } catch (IllegalArgumentException e) {\n            System.out.println(\"REJECT_OK\");\n        }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["REJECT_OK"],
+      "expectedStdoutNotContains": ["WRONG_NO_THROW"]
+    },
+    {
+      "name": "Custom MessageListener receives delivered messages for online users",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        ChatService cs = new ChatService();\n        User a = cs.registerUser(\"Alice\");\n        User b = cs.registerUser(\"Bob\");\n        cs.setUserStatus(a.getId(), OnlineStatus.ONLINE);\n        cs.setUserStatus(b.getId(), OnlineStatus.ONLINE);\n        ChatRoom g = cs.createGroupChat(\"T\", a.getId(), Arrays.asList(a.getId(), b.getId()));\n        final int[] count = {0};\n        cs.addMessageListener(b.getId(), (msg, room) -> { count[0]++; System.out.println(\"LIS_FIRED:\" + msg.getContent()); });\n        cs.sendMessage(g.getId(), a.getId(), \"ping\");\n        if (count[0] == 1) System.out.println(\"LISTENER_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["LIS_FIRED:ping", "LISTENER_OK"]
+    }
+  ]
+}

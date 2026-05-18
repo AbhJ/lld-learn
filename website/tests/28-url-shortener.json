@@ -1,0 +1,30 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Shorten then resolve returns the original URL",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        URLShortener s = new URLShortener(\"https://s.ly\", new EncodingStrategy.RandomEncoding());\n        String shortUrl = s.shorten(\"https://example.com/foo\");\n        String resolved = s.resolve(shortUrl);\n        if (\"https://example.com/foo\".equals(resolved)) System.out.println(\"OK_ROUNDTRIP\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_ROUNDTRIP"]
+    },
+    {
+      "name": "Duplicate long URL returns same short code (no new mapping)",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        URLShortener s = new URLShortener(\"https://s.ly\", new EncodingStrategy.RandomEncoding());\n        String a = s.shorten(\"https://example.com/x\");\n        String b = s.shorten(\"https://example.com/x\");\n        if (a.equals(b) && s.getTotalMappings() == 1) System.out.println(\"OK_DEDUP\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_DEDUP"]
+    },
+    {
+      "name": "Resolving unknown short code throws IllegalArgumentException",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        URLShortener s = new URLShortener(\"https://s.ly\", new EncodingStrategy.RandomEncoding());\n        try {\n            s.resolve(\"https://s.ly/nope123\");\n            System.out.println(\"WRONG_NO_EX\");\n        } catch (IllegalArgumentException e) {\n            System.out.println(\"OK_NOTFOUND\");\n        }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_NOTFOUND"],
+      "expectedStdoutNotContains": ["WRONG_NO_EX"]
+    },
+    {
+      "name": "Total mapping count grows with each distinct URL",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        URLShortener s = new URLShortener(\"https://s.ly\", new EncodingStrategy.RandomEncoding());\n        s.shorten(\"https://a.com\");\n        s.shorten(\"https://b.com\");\n        s.shorten(\"https://c.com\");\n        if (s.getTotalMappings() == 3) System.out.println(\"OK_COUNT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_COUNT"]
+    }
+  ]
+}

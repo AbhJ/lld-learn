@@ -1,0 +1,29 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Single booking returns BookingComponent with BK- id",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem sys = new BookingSystem();\n        Room r = new Room(\"r1\", \"RoomA\", 4, 1, Room.Amenity.WHITEBOARD);\n        sys.addRoom(r);\n        User u = new User(\"u1\", \"Alice\", \"Eng\", 1);\n        TimeSlot slot = new TimeSlot(LocalDateTime.of(2026,5,15,9,0), LocalDateTime.of(2026,5,15,10,0));\n        BookingComponent b = sys.bookRoom(r, slot, u, MeetingType.STANDUP, \"Daily\");\n        if (b != null && b.getId().startsWith(\"BK-\")) System.out.println(\"OK_BOOK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_BOOK"]
+    },
+    {
+      "name": "Conflict detection rejects overlapping booking",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem sys = new BookingSystem();\n        Room r = new Room(\"r1\", \"RoomA\", 4, 1, Room.Amenity.WHITEBOARD);\n        sys.addRoom(r);\n        User a = new User(\"u1\", \"Alice\", \"Eng\", 1);\n        User b = new User(\"u2\", \"Bob\", \"Eng\", 1);\n        TimeSlot slot = new TimeSlot(LocalDateTime.of(2026,5,15,9,0), LocalDateTime.of(2026,5,15,10,0));\n        BookingComponent b1 = sys.bookRoom(r, slot, a, MeetingType.STANDUP, \"First\");\n        BookingComponent b2 = sys.bookRoom(r, slot, b, MeetingType.STANDUP, \"Second\");\n        if (b1 != null && b2 == null) System.out.println(\"OK_CONFLICT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CONFLICT"]
+    },
+    {
+      "name": "Recurring series cancels every leaf via composite",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem sys = new BookingSystem();\n        Room r = new Room(\"r1\", \"RoomA\", 4, 1, Room.Amenity.WHITEBOARD);\n        sys.addRoom(r);\n        User a = new User(\"u1\", \"Alice\", \"Eng\", 1);\n        TimeSlot first = new TimeSlot(LocalDateTime.of(2026,5,15,9,0), LocalDateTime.of(2026,5,15,9,30));\n        BookingComponent series = sys.createRecurringBooking(r, first, a, MeetingType.STANDUP, \"Daily\", RecurringBooking.Frequency.DAILY, 3);\n        if (series.getTimeSlots().size() == 3 && series.getId().startsWith(\"SER-\")) System.out.println(\"OK_RECUR=\" + series.getTimeSlots().size());\n        sys.cancelBooking(series.getId());\n        boolean allCancelled = true;\n        for (Booking bk : ((RecurringBooking)series).getBookings()) if (!bk.isCancelled()) allCancelled = false;\n        if (allCancelled) System.out.println(\"OK_COMPOSITE_CANCEL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_RECUR=3", "OK_COMPOSITE_CANCEL"]
+    },
+    {
+      "name": "findAvailableRoom respects capacity and amenity filters",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\nimport java.util.HashSet;\nimport java.util.Set;\npublic class Main {\n    public static void main(String[] args) {\n        BookingSystem sys = new BookingSystem();\n        Room small = new Room(\"r1\", \"Small\", 4, 1, Room.Amenity.WHITEBOARD);\n        Room big = new Room(\"r2\", \"Big\", 20, 2, Room.Amenity.PROJECTOR, Room.Amenity.WHITEBOARD);\n        sys.addRoom(small); sys.addRoom(big);\n        TimeSlot slot = new TimeSlot(LocalDateTime.of(2026,5,15,9,0), LocalDateTime.of(2026,5,15,10,0));\n        Set<Room.Amenity> need = new HashSet<>();\n        need.add(Room.Amenity.PROJECTOR);\n        Room found = sys.findAvailableRoom(6, need, slot);\n        if (found != null && found.getName().equals(\"Big\")) System.out.println(\"OK_FIND=\" + found.getName());\n        Room foundLarge = sys.findAvailableRoom(50, new HashSet<>(), slot);\n        if (foundLarge == null) System.out.println(\"OK_NO_FIT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FIND=Big", "OK_NO_FIT"]
+    }
+  ]
+}

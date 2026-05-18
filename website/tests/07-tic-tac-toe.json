@@ -1,0 +1,40 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "X wins by completing a row",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        int[][] xMoves = {{0,0}, {0,1}, {0,2}};\n        int[][] oMoves = {{1,0}, {1,1}};\n        Game g = new Game(3, new HumanPlayer(\"X\", Symbol.X, xMoves), new HumanPlayer(\"O\", Symbol.O, oMoves));\n        g.playFullGame(false);\n        if (g.getStatus() == GameStatus.X_WINS) System.out.println(\"OK_X_WINS\");\n        else System.out.println(\"FAIL_\" + g.getStatus());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_X_WINS"],
+      "expectedStdoutNotContains": ["FAIL_"]
+    },
+    {
+      "name": "O wins by completing a column",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        int[][] xMoves = {{0,0}, {1,0}, {2,2}};\n        int[][] oMoves = {{0,1}, {1,1}, {2,1}};\n        Game g = new Game(3, new HumanPlayer(\"X\", Symbol.X, xMoves), new HumanPlayer(\"O\", Symbol.O, oMoves));\n        g.playFullGame(false);\n        if (g.getStatus() == GameStatus.O_WINS) System.out.println(\"OK_O_WINS\");\n        else System.out.println(\"FAIL_\" + g.getStatus());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_O_WINS"],
+      "expectedStdoutNotContains": ["FAIL_"]
+    },
+    {
+      "name": "X wins on the main diagonal",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        int[][] xMoves = {{0,0}, {1,1}, {2,2}};\n        int[][] oMoves = {{0,1}, {0,2}};\n        Game g = new Game(3, new HumanPlayer(\"X\", Symbol.X, xMoves), new HumanPlayer(\"O\", Symbol.O, oMoves));\n        g.playFullGame(false);\n        if (g.getStatus() == GameStatus.X_WINS && \"X wins!\".equals(g.getStatusMessage())) System.out.println(\"OK_DIAGONAL\");\n        else System.out.println(\"FAIL_\" + g.getStatus());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_DIAGONAL"],
+      "expectedStdoutNotContains": ["FAIL_"]
+    },
+    {
+      "name": "Full board with no line ends in a draw",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        int[][] xMoves = {{0,0}, {0,2}, {1,0}, {1,1}, {2,1}};\n        int[][] oMoves = {{0,1}, {1,2}, {2,0}, {2,2}};\n        Game g = new Game(3, new HumanPlayer(\"X\", Symbol.X, xMoves), new HumanPlayer(\"O\", Symbol.O, oMoves));\n        g.playFullGame(false);\n        if (g.getStatus() == GameStatus.DRAW) System.out.println(\"OK_DRAW\");\n        else System.out.println(\"FAIL_\" + g.getStatus());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_DRAW"],
+      "expectedStdoutNotContains": ["FAIL_"]
+    },
+    {
+      "name": "Undo clears the last move from the board",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        int[][] xMoves = {{1,1}, {0,0}};\n        int[][] oMoves = {{0,1}};\n        Game g = new Game(3, new HumanPlayer(\"X\", Symbol.X, xMoves), new HumanPlayer(\"O\", Symbol.O, oMoves));\n        g.playTurn();\n        if (g.getBoard().getSymbolAt(1,1) != Symbol.X) { System.out.println(\"FAIL_PLACE\"); return; }\n        boolean undone = g.undoLastMove();\n        if (undone && g.getBoard().getSymbolAt(1,1) == null) System.out.println(\"OK_UNDO\");\n        else System.out.println(\"FAIL_UNDO\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_UNDO"],
+      "expectedStdoutNotContains": ["FAIL_PLACE", "FAIL_UNDO"]
+    }
+  ]
+}

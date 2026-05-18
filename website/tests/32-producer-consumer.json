@@ -1,0 +1,23 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Single producer and consumer drain buffer",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BoundedBuffer b = new BoundedBuffer(4);\n        Coordinator c = new Coordinator(b);\n        Consumer cons = new Consumer(\"C1\", b, 5);\n        c.addProducer(new Producer(\"P1\", b, 5));\n        c.addConsumer(cons);\n        c.start();\n        c.awaitCompletion(4000);\n        System.out.println(\"CONSUMED=\" + cons.getConsumed() + \" SIZE=\" + b.size());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CONSUMED=5", "SIZE=0"]
+    },
+    {
+      "name": "Multiple producers and consumers exchange all items",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BoundedBuffer b = new BoundedBuffer(2);\n        Coordinator c = new Coordinator(b);\n        Consumer x = new Consumer(\"X\", b, 4);\n        Consumer y = new Consumer(\"Y\", b, 4);\n        c.addProducer(new Producer(\"A\", b, 4));\n        c.addProducer(new Producer(\"B\", b, 4));\n        c.addConsumer(x); c.addConsumer(y);\n        c.start();\n        c.awaitCompletion(4000);\n        System.out.println(\"TOTAL=\" + (x.getConsumed() + y.getConsumed()) + \" SIZE=\" + b.size());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["TOTAL=8", "SIZE=0"]
+    },
+    {
+      "name": "Bounded buffer reports capacity and full/empty state",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BoundedBuffer b = new BoundedBuffer(2);\n        System.out.println(\"CAP=\" + b.capacity() + \" EMPTY=\" + b.isEmpty());\n        b.put(new Item(\"i1\",\"d\"));\n        b.put(new Item(\"i2\",\"d\"));\n        System.out.println(\"FULL=\" + b.isFull() + \" SIZE=\" + b.size());\n        b.take();\n        System.out.println(\"AFTERTAKE=\" + b.size() + \" FULL=\" + b.isFull());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CAP=2 EMPTY=true", "FULL=true SIZE=2", "AFTERTAKE=1 FULL=false"]
+    }
+  ]
+}

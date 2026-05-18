@@ -1,0 +1,29 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Create order assigns ORD- prefixed id",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        OrderService svc = new OrderService();\n        Order o = svc.createOrder(Arrays.asList(new OrderItem(\"p1\",\"Book\",10.0,1)));\n        if (!o.getId().startsWith(\"ORD-\")) { System.exit(1); }\n        System.out.println(\"OK_CREATE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CREATE"]
+    },
+    {
+      "name": "State guard rejects shipping/delivering before payment",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        OrderService svc = new OrderService();\n        Order o = svc.createOrder(Arrays.asList(new OrderItem(\"p1\",\"Book\",10.0,2)));\n        boolean shipBlocked = !o.ship(new ExpressShipping(), \"TRK\");\n        boolean delBlocked = !o.deliver();\n        boolean paid = o.pay(new Payment(\"PAY1\", o.getItemsTotal(), Payment.PaymentMethod.CREDIT_CARD));\n        if (shipBlocked && delBlocked && paid) System.out.println(\"OK_GUARD\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_GUARD"]
+    },
+    {
+      "name": "Full lifecycle: pay, ship, deliver, return, refund",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        OrderService svc = new OrderService();\n        OrderItem mouse = new OrderItem(\"p1\",\"Mouse\",30.0,1);\n        Order o = svc.createOrder(Arrays.asList(mouse));\n        o.pay(new Payment(\"PAY1\", o.getItemsTotal(), Payment.PaymentMethod.CREDIT_CARD));\n        o.ship(new ExpressShipping(), \"TRK-1\");\n        o.deliver();\n        Return r = o.initiateReturn(mouse, Return.ReturnReason.DEFECTIVE);\n        Refund refund = o.processRefund(r);\n        if (r != null && refund != null) System.out.println(\"OK_FULLFLOW\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FULLFLOW"]
+    },
+    {
+      "name": "Items total sums quantity * price across items",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        OrderService svc = new OrderService();\n        Order o = svc.createOrder(Arrays.asList(new OrderItem(\"p1\",\"A\",5.0,2), new OrderItem(\"p2\",\"B\",3.0,1)));\n        if (Math.abs(o.getItemsTotal() - 13.0) < 0.001) System.out.println(\"OK_TOTAL=\" + o.getItemsTotal());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_TOTAL=13.0"]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Valid payment processed by registered processor",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        PaymentGateway g = new PaymentGateway();\n        g.registerProcessor(\"STRIPE\", new PaymentProcessor.StripeProcessor());\n        Transaction t = g.processPayment(new PaymentRequest(\"k1\", 50.0, \"USD\", \"4111111111111111\", \"STRIPE\", \"buy\"));\n        if (t != null && t.getStatus() == TransactionStatus.SUCCESS) System.out.println(\"OK_PAY\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_PAY"]
+    },
+    {
+      "name": "Negative amount rejected by validation chain",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        PaymentGateway g = new PaymentGateway();\n        g.registerProcessor(\"STRIPE\", new PaymentProcessor.StripeProcessor());\n        Transaction t = g.processPayment(new PaymentRequest(\"kbad\", -10.0, \"USD\", \"4111111111111111\", \"STRIPE\", \"x\"));\n        System.out.println(t == null ? \"OK_REJECTED\" : \"WRONG_ACCEPTED\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_REJECTED"],
+      "expectedStdoutNotContains": ["WRONG_ACCEPTED"]
+    },
+    {
+      "name": "Duplicate idempotency key returns null on second call",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        PaymentGateway g = new PaymentGateway();\n        g.registerProcessor(\"STRIPE\", new PaymentProcessor.StripeProcessor());\n        Transaction t1 = g.processPayment(new PaymentRequest(\"dup\", 10.0, \"USD\", \"4111111111111111\", \"STRIPE\", \"first\"));\n        Transaction t2 = g.processPayment(new PaymentRequest(\"dup\", 10.0, \"USD\", \"4111111111111111\", \"STRIPE\", \"second\"));\n        if (t1 != null && t2 == null) System.out.println(\"OK_IDEMPOTENT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_IDEMPOTENT"]
+    },
+    {
+      "name": "Unknown processor type rejected",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        PaymentGateway g = new PaymentGateway();\n        g.registerProcessor(\"STRIPE\", new PaymentProcessor.StripeProcessor());\n        Transaction t = g.processPayment(new PaymentRequest(\"kx\", 20.0, \"USD\", \"4111111111111111\", \"UNKNOWN\", \"x\"));\n        System.out.println(t == null ? \"OK_NO_PROCESSOR\" : \"WRONG\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_NO_PROCESSOR"],
+      "expectedStdoutNotContains": ["WRONG"]
+    },
+    {
+      "name": "Processor failure marks transaction FAILED",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        PaymentGateway g = new PaymentGateway();\n        PaymentProcessor.StripeProcessor s = new PaymentProcessor.StripeProcessor();\n        s.setSimulateFailure(true);\n        g.registerProcessor(\"STRIPE\", s);\n        Transaction t = g.processPayment(new PaymentRequest(\"kf\", 30.0, \"USD\", \"4111111111111111\", \"STRIPE\", \"x\"));\n        if (t != null && t.getStatus() == TransactionStatus.FAILED) System.out.println(\"OK_FAILED\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FAILED"]
+    }
+  ]
+}

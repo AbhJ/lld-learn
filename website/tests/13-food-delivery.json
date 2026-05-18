@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "PlaceOrderCommand creates an order with correct total",
+      "driver": "/* Test driver */\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        FoodDeliverySystem sys = new FoodDeliverySystem();\n        Restaurant r = new Restaurant(\"R1\", \"Pizza\", \"1 St\", 40.0, -74.0);\n        r.addMenuItem(new MenuItem(\"M1\", \"Pizza\", \"Cheese\", 10.00));\n        r.addMenuItem(new MenuItem(\"M2\", \"Cola\", \"330ml\", 2.00));\n        sys.registerRestaurant(r);\n        DeliveryAgent a = new DeliveryAgent(\"A1\", \"Mike\", 40.001, -74.001);\n        sys.registerAgent(a);\n        Customer c = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"Addr\", 40.05, -74.05);\n        CommandInvoker inv = new CommandInvoker();\n        Map<MenuItem, Integer> items = new LinkedHashMap<>();\n        items.put(r.getMenu().get(0), 2);\n        items.put(r.getMenu().get(1), 1);\n        PlaceOrderCommand cmd = new PlaceOrderCommand(sys, c, r, items);\n        inv.run(cmd);\n        Order o = cmd.getPlacedOrder();\n        if (o == null) { System.out.println(\"FAIL_PLACE\"); return; }\n        if (Math.abs(o.getTotalAmount() - 22.0) < 0.01 && o.getState() == OrderState.PLACED) System.out.println(\"PLACE_OK\");\n        else System.out.println(\"PLACE_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["PLACE_OK"]
+    },
+    {
+      "name": "Full order lifecycle reaches DELIVERED",
+      "driver": "/* Test driver */\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        FoodDeliverySystem sys = new FoodDeliverySystem();\n        Restaurant r = new Restaurant(\"R1\", \"Pizza\", \"1 St\", 40.0, -74.0);\n        r.addMenuItem(new MenuItem(\"M1\", \"Pizza\", \"Cheese\", 10.00));\n        sys.registerRestaurant(r);\n        DeliveryAgent a = new DeliveryAgent(\"A1\", \"Mike\", 40.001, -74.001);\n        sys.registerAgent(a);\n        Customer c = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"Addr\", 40.05, -74.05);\n        Map<MenuItem, Integer> items = new LinkedHashMap<>();\n        items.put(r.getMenu().get(0), 1);\n        Order o = sys.placeOrder(c, r, items);\n        boolean ok1 = sys.confirmOrder(o);\n        boolean ok2 = sys.startPreparing(o);\n        boolean ok3 = sys.assignAndDispatch(o);\n        boolean ok4 = sys.deliverOrder(o);\n        if (ok1 && ok2 && ok3 && ok4 && o.getState() == OrderState.DELIVERED) System.out.println(\"LIFECYCLE_OK\");\n        else System.out.println(\"LIFECYCLE_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["LIFECYCLE_OK"]
+    },
+    {
+      "name": "CancelOrderCommand cancels order and is recorded in history",
+      "driver": "/* Test driver */\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        FoodDeliverySystem sys = new FoodDeliverySystem();\n        Restaurant r = new Restaurant(\"R1\", \"Pizza\", \"1 St\", 40.0, -74.0);\n        r.addMenuItem(new MenuItem(\"M1\", \"Pizza\", \"Cheese\", 10.00));\n        sys.registerRestaurant(r);\n        Customer c = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"Addr\", 40.05, -74.05);\n        Map<MenuItem, Integer> items = new LinkedHashMap<>();\n        items.put(r.getMenu().get(0), 1);\n        Order o = sys.placeOrder(c, r, items);\n        sys.confirmOrder(o);\n        CommandInvoker inv = new CommandInvoker();\n        inv.run(new CancelOrderCommand(sys, o));\n        if (o.getState() == OrderState.CANCELLED && inv.historySize() == 1) System.out.println(\"CANCEL_CMD_OK\");\n        else System.out.println(\"CANCEL_CMD_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CANCEL_CMD_OK"]
+    },
+    {
+      "name": "Invalid state transition is rejected",
+      "driver": "/* Test driver */\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        FoodDeliverySystem sys = new FoodDeliverySystem();\n        Restaurant r = new Restaurant(\"R1\", \"Pizza\", \"1 St\", 40.0, -74.0);\n        r.addMenuItem(new MenuItem(\"M1\", \"Pizza\", \"Cheese\", 10.00));\n        sys.registerRestaurant(r);\n        Customer c = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"Addr\", 40.05, -74.05);\n        Map<MenuItem, Integer> items = new LinkedHashMap<>();\n        items.put(r.getMenu().get(0), 1);\n        Order o = sys.placeOrder(c, r, items);\n        boolean res = o.transition(OrderState.DELIVERED);\n        if (!res && o.getState() == OrderState.PLACED) System.out.println(\"INVALID_TRANSITION_OK\");\n        else System.out.println(\"INVALID_TRANSITION_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["INVALID_TRANSITION_OK"]
+    },
+    {
+      "name": "Nearest-agent strategy assigns the closer driver",
+      "driver": "/* Test driver */\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        FoodDeliverySystem sys = new FoodDeliverySystem();\n        Restaurant r = new Restaurant(\"R1\", \"Pizza\", \"1 St\", 40.0, -74.0);\n        r.addMenuItem(new MenuItem(\"M1\", \"Pizza\", \"Cheese\", 10.00));\n        sys.registerRestaurant(r);\n        DeliveryAgent far = new DeliveryAgent(\"A1\", \"FarAgent\", 50.0, -80.0);\n        DeliveryAgent near = new DeliveryAgent(\"A2\", \"NearAgent\", 40.001, -74.001);\n        sys.registerAgent(far);\n        sys.registerAgent(near);\n        Customer c = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"Addr\", 40.05, -74.05);\n        Map<MenuItem, Integer> items = new LinkedHashMap<>();\n        items.put(r.getMenu().get(0), 1);\n        Order o = sys.placeOrder(c, r, items);\n        sys.confirmOrder(o);\n        sys.startPreparing(o);\n        sys.assignAndDispatch(o);\n        if (o.getAgent() != null && o.getAgent().getName().equals(\"NearAgent\")) System.out.println(\"NEAREST_OK\");\n        else System.out.println(\"NEAREST_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["NEAREST_OK"]
+    }
+  ]
+}

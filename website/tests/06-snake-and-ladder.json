@@ -1,0 +1,23 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Board effects: ladders move up, snakes move down",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Board b = BoardFactory.createEmptyBoard(50);\n        b.addLadder(10, 35);\n        b.addSnake(20, 5);\n        if (b.getFinalPosition(10) != 35) { System.out.println(\"FAIL: ladder\"); System.exit(1); }\n        if (b.getFinalPosition(20) != 5) { System.out.println(\"FAIL: snake\"); System.exit(1); }\n        if (b.getFinalPosition(15) != 15) { System.out.println(\"FAIL: normal\"); System.exit(1); }\n        System.out.println(\"OK_EFFECTS\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_EFFECTS"]
+    },
+    {
+      "name": "Template method: SnakeAndLadderGame produces a winner with deterministic dice",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Board b = BoardFactory.createEmptyBoard(10);\n        FixedDice d = new FixedDice(5, 5, 5, 5, 5, 5);\n        SnakeAndLadderGame g = new SnakeAndLadderGame(b, d, false);\n        g.addPlayer(\"A\");\n        g.addPlayer(\"B\");\n        g.play(20);\n        if (g.getWinner() == null) { System.out.println(\"FAIL: no winner\"); System.exit(1); }\n        if (!g.getWinner().getName().equals(\"A\")) { System.out.println(\"FAIL: wrong winner=\" + g.getWinner().getName()); System.exit(1); }\n        System.out.println(\"OK_WINNER\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_WINNER"]
+    },
+    {
+      "name": "Overshoot: player stays in place when roll exceeds board size",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Board b = BoardFactory.createEmptyBoard(10);\n        FixedDice d = new FixedDice(6, 6, 6);\n        SnakeAndLadderGame g = new SnakeAndLadderGame(b, d, false);\n        g.addPlayer(\"Solo\");\n        g.playTurn();\n        int after1 = g.getPlayers().get(0).getPosition();\n        if (after1 != 6) { System.out.println(\"FAIL: first roll pos=\" + after1); System.exit(1); }\n        g.playTurn();\n        int after2 = g.getPlayers().get(0).getPosition();\n        if (after2 != 6) { System.out.println(\"FAIL: overshoot pos=\" + after2); System.exit(1); }\n        System.out.println(\"OK_OVERSHOOT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_OVERSHOOT"]
+    }
+  ]
+}

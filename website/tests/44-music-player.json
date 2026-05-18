@@ -1,0 +1,26 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "next() advances to the next song in the playlist",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Playlist p = new Playlist(\"PL\");\n        p.addSong(new Song(\"1\",\"A\",\"X\",\"Al\",100));\n        p.addSong(new Song(\"2\",\"B\",\"X\",\"Al\",100));\n        MusicPlayer mp = new MusicPlayer();\n        mp.loadPlaylist(p);\n        mp.play();\n        Song s = mp.next();\n        if (s != null && s.getTitle().equals(\"B\")) System.out.println(\"NEXT_OK\");\n        else System.out.println(\"NEXT_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["NEXT_OK"],
+      "expectedStdoutNotContains": ["NEXT_FAIL"]
+    },
+    {
+      "name": "Queued songs play before playlist songs on next()",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Playlist p = new Playlist(\"PL\");\n        p.addSong(new Song(\"1\",\"A\",\"X\",\"Al\",10));\n        p.addSong(new Song(\"2\",\"B\",\"X\",\"Al\",10));\n        MusicPlayer mp = new MusicPlayer();\n        mp.loadPlaylist(p);\n        mp.addToQueue(new Song(\"9\",\"Z\",\"Q\",\"Q\",1));\n        Song s = mp.next();\n        if (s != null && s.getTitle().equals(\"Z\")) System.out.println(\"QUEUE_OK\");\n        else System.out.println(\"QUEUE_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["QUEUE_OK"],
+      "expectedStdoutNotContains": ["QUEUE_FAIL"]
+    },
+    {
+      "name": "pause() transitions player to PAUSED state",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Playlist p = new Playlist(\"PL\");\n        p.addSong(new Song(\"1\",\"A\",\"X\",\"Al\",10));\n        MusicPlayer mp = new MusicPlayer();\n        mp.loadPlaylist(p);\n        mp.play();\n        mp.pause();\n        if (mp.getState().getStateName().equals(\"PAUSED\")) System.out.println(\"PAUSED_OK\");\n        else System.out.println(\"PAUSED_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["PAUSED_OK"],
+      "expectedStdoutNotContains": ["PAUSED_FAIL"]
+    }
+  ]
+}

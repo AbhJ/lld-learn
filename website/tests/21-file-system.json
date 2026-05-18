@@ -1,0 +1,40 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "mkdir creates nested directories and createFile stores content",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        FileSystem fs = new FileSystem();\n        fs.mkdir(\"/a/b/c\");\n        File f = fs.createFile(\"/a/b/c/x.txt\", \"hello\");\n        System.out.println(f.getName().equals(\"x.txt\") ? \"OK_NAME\" : \"FAIL\");\n        System.out.println(fs.ls(\"/a/b/c\").size() == 1 ? \"OK_LS_1\" : \"FAIL\");\n        System.out.println(fs.calculateSize(\"/a\") == 5 ? \"OK_SIZE_5\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_NAME", "OK_LS_1", "OK_SIZE_5"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Glob search finds matching files across the tree",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        FileSystem fs = new FileSystem();\n        fs.createFile(\"/a/x.txt\",\"x\");\n        fs.createFile(\"/a/y.log\",\"y\");\n        fs.createFile(\"/a/sub/z.txt\",\"z\");\n        java.util.List<String> txt = fs.search(\"/\", \"*.txt\");\n        System.out.println(txt.size() == 2 ? \"OK_FOUND_2_TXT\" : \"FAIL_count=\" + txt.size());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FOUND_2_TXT"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Read-only permissions deny writes",
+      "driver": "/* Test driver */\nimport java.util.EnumSet;\npublic class Main {\n    public static void main(String[] args) {\n        FileSystem fs = new FileSystem();\n        File f = fs.createFile(\"/etc/conf\",\"old\");\n        f.setPermissions(EnumSet.of(Permission.READ));\n        boolean denied = false;\n        try { f.setContent(\"new\"); } catch (SecurityException e) { denied = true; }\n        System.out.println(denied ? \"OK_WRITE_DENIED\" : \"FAIL\");\n        System.out.println(f.getContent().equals(\"old\") ? \"OK_CONTENT_UNCHANGED\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_WRITE_DENIED", "OK_CONTENT_UNCHANGED"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Delete removes file and resolve then throws",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        FileSystem fs = new FileSystem();\n        fs.createFile(\"/d/a.txt\",\"aaa\");\n        fs.createFile(\"/d/b.txt\",\"bb\");\n        boolean removed = fs.delete(\"/d/a.txt\");\n        System.out.println(removed ? \"OK_DELETED\" : \"FAIL\");\n        System.out.println(fs.ls(\"/d\").size() == 1 ? \"OK_LS_AFTER_1\" : \"FAIL\");\n        boolean caught = false;\n        try { fs.resolve(\"/d/a.txt\"); } catch (IllegalArgumentException e) { caught = true; }\n        System.out.println(caught ? \"OK_RESOLVE_THROWS\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_DELETED", "OK_LS_AFTER_1", "OK_RESOLVE_THROWS"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "calculateSize sums recursively across subdirectories",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        FileSystem fs = new FileSystem();\n        fs.createFile(\"/r/a/x.txt\",\"12345\");\n        fs.createFile(\"/r/a/y.txt\",\"ab\");\n        fs.createFile(\"/r/b/z.txt\",\"xyz\");\n        long sizeA = fs.calculateSize(\"/r/a\");\n        long sizeR = fs.calculateSize(\"/r\");\n        System.out.println(sizeA == 7 ? \"OK_A_7\" : \"FAIL_A=\" + sizeA);\n        System.out.println(sizeR == 10 ? \"OK_R_10\" : \"FAIL_R=\" + sizeR);\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_A_7", "OK_R_10"],
+      "expectedStdoutNotContains": ["FAIL"]
+    }
+  ]
+}

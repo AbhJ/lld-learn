@@ -1,0 +1,29 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Sliding window allows up to capacity then denies",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RateLimiter l = RateLimiterService.createSlidingWindow(3, 1000);\n        int allowed = 0, denied = 0;\n        for (int i = 0; i < 5; i++) {\n            if (l.allowRequest(new Request(\"c\"))) allowed++; else denied++;\n        }\n        if (allowed == 3 && denied == 2) System.out.println(\"OK_LIMIT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_LIMIT"]
+    },
+    {
+      "name": "Per-client isolation: clients have independent quotas",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RateLimiter l = RateLimiterService.createSlidingWindow(2, 1000);\n        boolean a1 = l.allowRequest(new Request(\"A\"));\n        boolean a2 = l.allowRequest(new Request(\"A\"));\n        boolean a3 = l.allowRequest(new Request(\"A\"));\n        boolean b1 = l.allowRequest(new Request(\"B\"));\n        boolean b2 = l.allowRequest(new Request(\"B\"));\n        if (a1 && a2 && !a3 && b1 && b2) System.out.println(\"OK_ISOLATION\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_ISOLATION"]
+    },
+    {
+      "name": "Window slides: requests allowed again after window elapses",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        SlidingWindowLimiter l = new SlidingWindowLimiter(2, 1000);\n        long t0 = 10000L;\n        boolean r1 = l.allowRequest(new Request(\"c\", t0));\n        boolean r2 = l.allowRequest(new Request(\"c\", t0 + 100));\n        boolean r3 = l.allowRequest(new Request(\"c\", t0 + 200));\n        boolean r4 = l.allowRequest(new Request(\"c\", t0 + 1500));\n        if (r1 && r2 && !r3 && r4) System.out.println(\"OK_SLIDE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_SLIDE"]
+    },
+    {
+      "name": "Algorithm name advertises Sliding Window (synchronized)",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RateLimiter l = RateLimiterService.createSlidingWindow(5, 1000);\n        if (\"Sliding Window (synchronized)\".equals(l.getAlgorithmName())) System.out.println(\"OK_NAME\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_NAME"]
+    }
+  ]
+}

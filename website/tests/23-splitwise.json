@@ -1,0 +1,36 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Equal split between two users yields 50/50 balance",
+      "driver": "/* Test driver */\nimport java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        SplitwiseService s = new SplitwiseService();\n        User alice = s.addUser(\"u1\", \"Alice\", \"a@b.com\");\n        User bob = s.addUser(\"u2\", \"Bob\", \"b@b.com\");\n        s.createGroup(\"g1\", \"G\", Arrays.asList(alice, bob));\n        s.addGroupExpense(\"g1\", \"e1\", \"Lunch\", 100.0, alice, new SplitStrategy.EqualSplit(), new HashMap<>());\n        List<Balance> bs = s.getBalances();\n        boolean found = false;\n        for (Balance b : bs) {\n            if (b.getFrom() == bob && b.getTo() == alice && Math.abs(b.getAmount() - 50.0) < 0.01) found = true;\n        }\n        if (found) System.out.println(\"OK_EQUAL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_EQUAL"]
+    },
+    {
+      "name": "Percentage split apportions debt by percent",
+      "driver": "/* Test driver */\nimport java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        SplitwiseService s = new SplitwiseService();\n        User a = s.addUser(\"u1\", \"A\", \"a@x\");\n        User b = s.addUser(\"u2\", \"B\", \"b@x\");\n        User c = s.addUser(\"u3\", \"C\", \"c@x\");\n        s.createGroup(\"g1\", \"G\", Arrays.asList(a, b, c));\n        Map<User, Double> p = new HashMap<>();\n        p.put(a, 50.0); p.put(b, 30.0); p.put(c, 20.0);\n        s.addGroupExpense(\"g1\", \"e1\", \"X\", 100.0, a, new SplitStrategy.PercentageSplit(), p);\n        List<Balance> bs = s.getBalances();\n        double bToA = 0, cToA = 0;\n        for (Balance bal : bs) {\n            if (bal.getFrom() == b && bal.getTo() == a) bToA = bal.getAmount();\n            if (bal.getFrom() == c && bal.getTo() == a) cToA = bal.getAmount();\n        }\n        if (Math.abs(bToA - 30.0) < 0.01 && Math.abs(cToA - 20.0) < 0.01) System.out.println(\"OK_PCT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_PCT"]
+    },
+    {
+      "name": "Percentage split rejects percentages that do not sum to 100",
+      "driver": "/* Test driver */\nimport java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        SplitwiseService s = new SplitwiseService();\n        User a = s.addUser(\"u1\", \"A\", \"a@x\");\n        User b = s.addUser(\"u2\", \"B\", \"b@x\");\n        s.createGroup(\"g1\", \"G\", Arrays.asList(a, b));\n        Map<User, Double> bad = new HashMap<>();\n        bad.put(a, 50.0); bad.put(b, 40.0);\n        try {\n            s.addGroupExpense(\"g1\", \"e1\", \"Y\", 100.0, a, new SplitStrategy.PercentageSplit(), bad);\n            System.out.println(\"WRONG\");\n        } catch (IllegalArgumentException e) { System.out.println(\"OK_BADPCT\"); }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_BADPCT"],
+      "expectedStdoutNotContains": ["WRONG"]
+    },
+    {
+      "name": "Exact split assigns specific amounts per participant",
+      "driver": "/* Test driver */\nimport java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        SplitwiseService s = new SplitwiseService();\n        User a = s.addUser(\"u1\", \"A\", \"a@x\");\n        User b = s.addUser(\"u2\", \"B\", \"b@x\");\n        s.createGroup(\"g1\", \"G\", Arrays.asList(a, b));\n        Map<User, Double> ex = new HashMap<>();\n        ex.put(a, 30.0); ex.put(b, 70.0);\n        s.addGroupExpense(\"g1\", \"e1\", \"X\", 100.0, a, new SplitStrategy.ExactSplit(), ex);\n        List<Balance> bs = s.getBalances();\n        double owed = 0;\n        for (Balance bal : bs) if (bal.getFrom() == b && bal.getTo() == a) owed = bal.getAmount();\n        if (Math.abs(owed - 70.0) < 0.01) System.out.println(\"OK_EXACT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_EXACT"]
+    },
+    {
+      "name": "Settlements are produced from non-empty group expenses",
+      "driver": "/* Test driver */\nimport java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        SplitwiseService s = new SplitwiseService();\n        User a = s.addUser(\"u1\", \"A\", \"a@x\");\n        User b = s.addUser(\"u2\", \"B\", \"b@x\");\n        User c = s.addUser(\"u3\", \"C\", \"c@x\");\n        s.createGroup(\"g1\", \"G\", Arrays.asList(a, b, c));\n        s.addGroupExpense(\"g1\", \"e1\", \"Dinner\", 30.0, a, new SplitStrategy.EqualSplit(), new HashMap<>());\n        s.addGroupExpense(\"g1\", \"e2\", \"Cab\", 30.0, b, new SplitStrategy.EqualSplit(), new HashMap<>());\n        List<Settlement> settlements = s.getSettlements();\n        if (settlements.size() >= 1) System.out.println(\"OK_SETTLE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_SETTLE"]
+    }
+  ]
+}

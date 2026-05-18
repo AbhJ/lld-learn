@@ -1,0 +1,36 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Formula computes sum of two cells",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Spreadsheet s = new Spreadsheet();\n        s.setCellValue(\"A1\", 10.0);\n        s.setCellValue(\"A2\", 20.0);\n        s.setCellFormula(\"A3\", \"A1+A2\");\n        if (s.getCellNumericValue(\"A3\") == 30.0) System.out.println(\"OK_FORMULA\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FORMULA"]
+    },
+    {
+      "name": "SUM range function aggregates values",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Spreadsheet s = new Spreadsheet();\n        s.setCellValue(\"A1\", 1.0); s.setCellValue(\"A2\", 2.0); s.setCellValue(\"A3\", 3.0);\n        s.setCellFormula(\"A4\", \"SUM(A1:A3)\");\n        if (s.getCellNumericValue(\"A4\") == 6.0) System.out.println(\"OK_SUM\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_SUM"]
+    },
+    {
+      "name": "Circular dependency is rejected",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Spreadsheet s = new Spreadsheet();\n        s.setCellFormula(\"C1\", \"C2+1\");\n        try { s.setCellFormula(\"C2\", \"C1+1\"); System.out.println(\"WRONG\"); }\n        catch (IllegalArgumentException e) { System.out.println(\"OK_CIRCULAR\"); }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CIRCULAR"],
+      "expectedStdoutNotContains": ["WRONG"]
+    },
+    {
+      "name": "Undo and redo restore prior cell value",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Spreadsheet s = new Spreadsheet();\n        s.setCellValue(\"A1\", 5.0);\n        s.setCellValue(\"A1\", 99.0);\n        s.undo();\n        if (s.getCellNumericValue(\"A1\") == 5.0) {\n            s.redo();\n            if (s.getCellNumericValue(\"A1\") == 99.0) System.out.println(\"OK_UNDO_REDO\");\n        }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_UNDO_REDO"]
+    },
+    {
+      "name": "CellObserver receives change events",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Spreadsheet s = new Spreadsheet();\n        java.util.List<String> events = new java.util.ArrayList<>();\n        s.addObserver((id, oldV, newV) -> events.add(id));\n        s.setCellValue(\"A1\", 1.0);\n        s.setCellText(\"B1\", \"hi\");\n        if (events.size() == 2 && events.get(0).equals(\"A1\") && events.get(1).equals(\"B1\")) {\n            System.out.println(\"OK_OBSERVER\");\n        }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_OBSERVER"]
+    }
+  ]
+}

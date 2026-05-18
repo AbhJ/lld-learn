@@ -1,0 +1,36 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Place order on assigned table queues it in kitchen",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        Order.resetCounter();\n        Restaurant r = new Restaurant(\"X\", 2);\n        r.addMenuItem(new MenuItem(\"Pasta\", 10.00, \"Mains\"));\n        Table t = r.assignTable(\"A\");\n        Order o = r.placeOrder(t.getNumber(), Arrays.asList(\"Pasta\"));\n        if (o == null) { System.out.println(\"FAIL\"); System.exit(1); }\n        System.out.println(\"ORDER_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["ORDER_OK"]
+    },
+    {
+      "name": "No free table returns null when capacity reached",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        Order.resetCounter();\n        Restaurant r = new Restaurant(\"X\", 1);\n        r.addMenuItem(new MenuItem(\"Pasta\", 10.00, \"Mains\"));\n        Table t1 = r.assignTable(\"A\");\n        Table t2 = r.assignTable(\"B\");\n        if (t1 != null && t2 == null) System.out.println(\"CAPACITY_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CAPACITY_OK"]
+    },
+    {
+      "name": "DineInBilling adds service percent and marks order PAID",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        Order.resetCounter();\n        Restaurant r = new Restaurant(\"X\", 1);\n        r.addMenuItem(new MenuItem(\"Pasta\", 100.00, \"Mains\"));\n        Table t = r.assignTable(\"A\");\n        Order o = r.placeOrder(t.getNumber(), Arrays.asList(\"Pasta\"));\n        double total = r.bill(o, new DineInBilling(10));\n        if (Math.abs(total - 110.00) < 0.01) System.out.println(\"BILL_OK\");\n        if (\"PAID\".equals(o.getState())) System.out.println(\"PAID_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["BILL_OK", "PAID_OK"]
+    },
+    {
+      "name": "Kitchen processes orders in FIFO order",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        Order.resetCounter();\n        Restaurant r = new Restaurant(\"X\", 2);\n        r.addMenuItem(new MenuItem(\"Pasta\", 10.00, \"Mains\"));\n        Table t1 = r.assignTable(\"A\");\n        Table t2 = r.assignTable(\"B\");\n        Order o1 = r.placeOrder(t1.getNumber(), Arrays.asList(\"Pasta\"));\n        Order o2 = r.placeOrder(t2.getNumber(), Arrays.asList(\"Pasta\"));\n        Order first = r.processNext();\n        Order second = r.processNext();\n        if (first.getId() == 1 && second.getId() == 2) System.out.println(\"FIFO_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["FIFO_OK"]
+    },
+    {
+      "name": "Order with only unknown items is rejected",
+      "driver": "/* Test driver */\nimport java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        Order.resetCounter();\n        Restaurant r = new Restaurant(\"X\", 1);\n        r.addMenuItem(new MenuItem(\"Pasta\", 10.00, \"Mains\"));\n        Table t = r.assignTable(\"A\");\n        Order o = r.placeOrder(t.getNumber(), Arrays.asList(\"Nonexistent\"));\n        System.out.println(o == null ? \"REJECT_OK\" : \"REJECT_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["REJECT_OK"],
+      "expectedStdoutNotContains": ["REJECT_FAIL"]
+    }
+  ]
+}

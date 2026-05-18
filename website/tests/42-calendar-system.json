@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Create calendar and add an event",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\npublic class Main {\n    public static void main(String[] args) {\n        CalendarService svc = new CalendarService();\n        svc.createCalendar(\"u1\", \"Ada\");\n        LocalDateTime t = LocalDateTime.of(2026, 6, 1, 9, 0);\n        Event e = new EventBuilder(svc.nextEventId()).title(\"Standup\").from(t).to(t.plusMinutes(30)).organizer(\"u1\").build();\n        svc.addEvent(\"u1\", e);\n        if (svc.getCalendar(\"u1\").getEvents().size() == 1) System.out.println(\"OK_CREATE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CREATE"]
+    },
+    {
+      "name": "Detects overlapping events as conflicts",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\nimport java.util.List;\npublic class Main {\n    public static void main(String[] args) {\n        CalendarService svc = new CalendarService();\n        svc.createCalendar(\"u1\", \"Ada\");\n        LocalDateTime t = LocalDateTime.of(2026, 6, 1, 9, 0);\n        Event a = new EventBuilder(svc.nextEventId()).title(\"A\").from(t).to(t.plusMinutes(60)).organizer(\"u1\").build();\n        Event b = new EventBuilder(svc.nextEventId()).title(\"B\").from(t.plusMinutes(30)).to(t.plusMinutes(90)).organizer(\"u1\").build();\n        svc.addEvent(\"u1\", a);\n        svc.addEvent(\"u1\", b);\n        List<String> conflicts = svc.checkConflicts(\"u1\");\n        if (!conflicts.isEmpty()) System.out.println(\"OK_CONFLICT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CONFLICT"]
+    },
+    {
+      "name": "Daily recurrence generates correct number of occurrences",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\nimport java.util.List;\npublic class Main {\n    public static void main(String[] args) {\n        LocalDateTime t = LocalDateTime.of(2026, 6, 1, 9, 0);\n        Event e = new EventBuilder(\"e1\").title(\"Daily\").from(t).to(t.plusMinutes(15)).organizer(\"u1\").recurring(new DailyRecurrence()).build();\n        List<TimeSlot> slots = e.getOccurrences(7);\n        if (slots.size() == 7) System.out.println(\"OK_RECUR\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_RECUR"]
+    },
+    {
+      "name": "Invitee is added to event after accepting invitation",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\npublic class Main {\n    public static void main(String[] args) {\n        CalendarService svc = new CalendarService();\n        svc.createCalendar(\"alice\", \"Alice\");\n        svc.createCalendar(\"bob\", \"Bob\");\n        LocalDateTime t = LocalDateTime.of(2026, 6, 1, 14, 0);\n        Event e = new EventBuilder(svc.nextEventId()).title(\"Review\").from(t).to(t.plusHours(1)).organizer(\"alice\").build();\n        svc.addEvent(\"alice\", e);\n        Invitation inv = svc.inviteUser(e.getId(), \"alice\", \"bob\", e);\n        svc.acceptInvitation(inv, e);\n        if (e.getAttendeeIds().contains(\"bob\") && svc.getCalendar(\"bob\").getEvents().size() == 1) System.out.println(\"OK_INVITE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_INVITE"]
+    },
+    {
+      "name": "Reminder fires only once when triggered",
+      "driver": "/* Test driver */\nimport java.time.LocalDateTime;\npublic class Main {\n    public static void main(String[] args) {\n        LocalDateTime t = LocalDateTime.of(2026, 6, 1, 9, 0);\n        Event e = new EventBuilder(\"e1\").title(\"Sync\").from(t).to(t.plusMinutes(30)).organizer(\"u1\").reminder(15).build();\n        for (Reminder r : e.getReminders()) r.trigger();\n        if (e.getReminders().get(0).isTriggered()) System.out.println(\"OK_REMIND\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_REMIND"]
+    }
+  ]
+}

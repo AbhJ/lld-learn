@@ -1,0 +1,26 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Follower sees followee's post in chronological feed",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        SocialNetwork net = new SocialNetwork();\n        User a = new User(\"U-1\", \"Alice\", \"Eng\");\n        User b = new User(\"U-2\", \"Bob\", \"Des\");\n        net.registerUser(a); net.registerUser(b);\n        net.follow(b, a);\n        net.createPost(a, \"hello\");\n        System.out.println(net.getFeed(b, new ChronologicalFeed()).size() == 1 ? \"FEED_OK\" : \"FEED_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["FEED_OK"],
+      "expectedStdoutNotContains": ["FEED_FAIL"]
+    },
+    {
+      "name": "Author receives notifications for follow and like",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        SocialNetwork net = new SocialNetwork();\n        User a = new User(\"U-1\", \"Alice\", \"Eng\");\n        User b = new User(\"U-2\", \"Bob\", \"Des\");\n        net.registerUser(a); net.registerUser(b);\n        net.follow(b, a);\n        Post p = net.createPost(a, \"hi\");\n        net.likePost(b, p);\n        System.out.println(net.getUnreadNotifications(a).size() >= 2 ? \"NOTIF_OK\" : \"NOTIF_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["NOTIF_OK"],
+      "expectedStdoutNotContains": ["NOTIF_FAIL"]
+    },
+    {
+      "name": "Stacked decorators add Trending and Verified badges",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Post p = new Post(\"U-1\", \"Alice\", \"Hello\");\n        PostComponent dec = new TrendingBadgeDecorator(new VerifiedBadgeDecorator(p));\n        String out = dec.getDisplayContent();\n        System.out.println(out.contains(\"[TRENDING]\") && out.contains(\"[VERIFIED]\") ? \"DECOR_OK\" : \"DECOR_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["DECOR_OK"],
+      "expectedStdoutNotContains": ["DECOR_FAIL"]
+    }
+  ]
+}

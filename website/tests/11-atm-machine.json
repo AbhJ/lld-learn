@@ -1,0 +1,36 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Authenticated withdrawal debits balance",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ATM atm = new ATM();\n        Account acc = new Account(\"A1\", \"Alice\", 5000.00, \"1234\");\n        atm.registerAccount(acc);\n        Card c = new Card(\"4111\", \"VISA\", acc);\n        atm.insertCard(c);\n        atm.authenticate(\"1234\");\n        Receipt r = atm.withdraw(2700);\n        if (r != null && Math.abs(acc.getBalance() - 2300.00) < 0.01) System.out.println(\"WITHDRAW_OK\");\n        else System.out.println(\"WITHDRAW_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["WITHDRAW_OK"],
+      "expectedStdoutNotContains": ["WITHDRAW_FAIL"]
+    },
+    {
+      "name": "Withdrawal greater than balance is rejected",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ATM atm = new ATM();\n        Account acc = new Account(\"A1\", \"Alice\", 100.00, \"1234\");\n        atm.registerAccount(acc);\n        Card c = new Card(\"4111\", \"VISA\", acc);\n        atm.insertCard(c);\n        atm.authenticate(\"1234\");\n        Receipt r = atm.withdraw(99999);\n        if (r == null && Math.abs(acc.getBalance() - 100.00) < 0.01) System.out.println(\"INSUFFICIENT_OK\");\n        else System.out.println(\"INSUFFICIENT_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["INSUFFICIENT_OK"]
+    },
+    {
+      "name": "Three wrong PINs retain card",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ATM atm = new ATM();\n        Account acc = new Account(\"A1\", \"Alice\", 1000.00, \"1234\");\n        atm.registerAccount(acc);\n        Card c = new Card(\"4111\", \"VISA\", acc);\n        atm.insertCard(c);\n        atm.authenticate(\"0000\");\n        atm.authenticate(\"1111\");\n        atm.authenticate(\"2222\");\n        boolean r = atm.authenticate(\"1234\");\n        if (!r && atm.getCurrentCard() == null) System.out.println(\"PIN_RETAIN_OK\");\n        else System.out.println(\"PIN_RETAIN_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["PIN_RETAIN_OK"]
+    },
+    {
+      "name": "Transfer moves funds between accounts",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ATM atm = new ATM();\n        Account a1 = new Account(\"A1\", \"Alice\", 1000.00, \"1234\");\n        Account a2 = new Account(\"A2\", \"Bob\", 500.00, \"5678\");\n        atm.registerAccount(a1);\n        atm.registerAccount(a2);\n        Card c = new Card(\"4111\", \"VISA\", a1);\n        atm.insertCard(c);\n        atm.authenticate(\"1234\");\n        Receipt r = atm.transfer(\"A2\", 300);\n        if (r != null && Math.abs(a1.getBalance() - 700.0) < 0.01 && Math.abs(a2.getBalance() - 800.0) < 0.01) System.out.println(\"TRANSFER_OK\");\n        else System.out.println(\"TRANSFER_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["TRANSFER_OK"]
+    },
+    {
+      "name": "Cash dispenser chain handles mixed denominations",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ATM atm = new ATM();\n        Account acc = new Account(\"A1\", \"Alice\", 5000.00, \"1234\");\n        atm.registerAccount(acc);\n        Card c = new Card(\"4111\", \"VISA\", acc);\n        atm.insertCard(c);\n        atm.authenticate(\"1234\");\n        Receipt r = atm.withdraw(2750);\n        if (r == null) { System.out.println(\"CHAIN_FAIL\"); return; }\n        String s = r.toString();\n        if (s.contains(\"2000\") && s.contains(\"500\") && Math.abs(acc.getBalance() - 2250.0) < 0.01) System.out.println(\"CHAIN_OK\");\n        else System.out.println(\"CHAIN_PARTIAL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["CHAIN_OK"]
+    }
+  ]
+}

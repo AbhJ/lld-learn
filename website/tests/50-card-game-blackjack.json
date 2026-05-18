@@ -1,0 +1,40 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Hand score with two number cards",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Hand h = new Hand();\n        h.addCard(new Card(Rank.SEVEN, Suit.HEARTS));\n        h.addCard(new Card(Rank.NINE, Suit.CLUBS));\n        System.out.println(h.getScore() == 16 ? \"OK_SCORE_16\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_SCORE_16"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Ace counts as 11 when total is at most 21",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Hand h = new Hand();\n        h.addCard(new Card(Rank.ACE, Suit.HEARTS));\n        h.addCard(new Card(Rank.NINE, Suit.CLUBS));\n        if (h.getScore() != 20) { System.out.println(\"FAIL\"); System.exit(1); }\n        System.out.println(\"OK_ACE_AS_11_20\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_ACE_AS_11_20"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Ace downgrades to 1 to avoid busting",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Hand h = new Hand();\n        h.addCard(new Card(Rank.ACE, Suit.HEARTS));\n        h.addCard(new Card(Rank.NINE, Suit.CLUBS));\n        h.addCard(new Card(Rank.FIVE, Suit.SPADES));\n        System.out.println(h.getScore() == 15 ? \"OK_ACE_AS_1_15\" : \"FAIL\");\n        System.out.println(!h.isBusted() ? \"OK_NOT_BUSTED\" : \"FAIL_BUSTED\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_ACE_AS_1_15", "OK_NOT_BUSTED"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Player can place a bet from balance",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Player p = new Player(\"P\", 500);\n        BlackjackGame g = new BlackjackGame(p, new StandardDealerStrategy(), 1L);\n        boolean ok = g.placeBet(100);\n        if (!ok) { System.out.println(\"FAIL_BET\"); System.exit(1); }\n        if (p.getBalance() != 400) { System.out.println(\"FAIL_BAL\"); System.exit(1); }\n        System.out.println(\"OK_BET_PLACED\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_BET_PLACED"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Game reaches GAME_OVER after stand",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Player p = new Player(\"P\", 500);\n        BlackjackGame g = new BlackjackGame(p, new StandardDealerStrategy(), 42L);\n        g.placeBet(100); g.deal();\n        if (g.getState() == GameState.PLAYING) g.stand();\n        System.out.println(g.getState() == GameState.GAME_OVER ? \"OK_GAME_OVER\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_GAME_OVER"],
+      "expectedStdoutNotContains": ["FAIL"]
+    }
+  ]
+}

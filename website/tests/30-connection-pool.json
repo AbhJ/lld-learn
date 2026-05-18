@@ -1,0 +1,24 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Borrow returns connection and pool prewarms to minSize",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ConnectionPool pool = new ConnectionPool(new PoolConfig(2, 5, 1000));\n        Connection c = pool.borrow();\n        System.out.println(\"OK_BORROW=\" + (c != null) + \" ACTIVE=\" + pool.getStats().getActive() + \" TOTAL=\" + pool.getStats().getTotal());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_BORROW=true", "ACTIVE=1", "TOTAL=2"]
+    },
+    {
+      "name": "Returned connection is reused on next borrow",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ConnectionPool pool = new ConnectionPool(new PoolConfig(1, 3, 1000));\n        Connection c1 = pool.borrow();\n        String id1 = c1.getId();\n        pool.returnConnection(c1);\n        Connection c2 = pool.borrow();\n        System.out.println(\"OK_REUSE=\" + id1.equals(c2.getId()) + \" ACTIVE=\" + pool.getStats().getActive());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_REUSE=true", "ACTIVE=1"]
+    },
+    {
+      "name": "Pool exhaustion times out and shutdown blocks further borrows",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ConnectionPool pool = new ConnectionPool(new PoolConfig(0, 1, 200));\n        pool.borrow();\n        try { pool.borrow(); System.out.println(\"WRONG\"); } catch (RuntimeException e) { System.out.println(\"OK_EXHAUSTED:\" + e.getMessage()); }\n        pool.shutdown();\n        try { pool.borrow(); System.out.println(\"WRONG2\"); } catch (IllegalStateException e) { System.out.println(\"OK_SHUTDOWN:\" + e.getMessage()); }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_EXHAUSTED:Pool exhausted", "OK_SHUTDOWN:Pool is shut down"],
+      "expectedStdoutNotContains": ["WRONG"]
+    }
+  ]
+}

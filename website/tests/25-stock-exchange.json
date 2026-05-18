@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Buy and sell limit orders match at the same price",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        StockExchange ex = new StockExchange();\n        Stock aapl = new Stock(\"AAPL\", \"Apple\");\n        ex.registerStock(aapl);\n        Trader a = ex.registerTrader(\"t1\", \"A\");\n        Trader b = ex.registerTrader(\"t2\", \"B\");\n        ex.placeLimitOrder(a, aapl, OrderSide.BUY, 100, 150.0);\n        Order sell = ex.placeLimitOrder(b, aapl, OrderSide.SELL, 100, 150.0);\n        if (sell.getFilledQuantity() == 100 && sell.getStatus() == OrderStatus.FILLED) System.out.println(\"OK_MATCH\");\n        if (ex.getTradeHistory().size() == 1) System.out.println(\"OK_TRADE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_MATCH", "OK_TRADE"]
+    },
+    {
+      "name": "Orders that do not cross the spread remain unmatched",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        StockExchange ex = new StockExchange();\n        Stock aapl = new Stock(\"AAPL\", \"Apple\");\n        ex.registerStock(aapl);\n        Trader a = ex.registerTrader(\"t1\", \"A\");\n        Trader b = ex.registerTrader(\"t2\", \"B\");\n        Order buy = ex.placeLimitOrder(a, aapl, OrderSide.BUY, 100, 140.0);\n        Order sell = ex.placeLimitOrder(b, aapl, OrderSide.SELL, 100, 150.0);\n        if (buy.getFilledQuantity() == 0 && sell.getFilledQuantity() == 0) System.out.println(\"OK_NOMATCH\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_NOMATCH"]
+    },
+    {
+      "name": "Larger order partially fills against smaller resting liquidity",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        StockExchange ex = new StockExchange();\n        Stock aapl = new Stock(\"AAPL\", \"Apple\");\n        ex.registerStock(aapl);\n        Trader a = ex.registerTrader(\"t1\", \"A\");\n        Trader b = ex.registerTrader(\"t2\", \"B\");\n        ex.placeLimitOrder(a, aapl, OrderSide.BUY, 50, 150.0);\n        Order sell = ex.placeLimitOrder(b, aapl, OrderSide.SELL, 100, 150.0);\n        if (sell.getFilledQuantity() == 50 && sell.getRemainingQuantity() == 50\n            && sell.getStatus() == OrderStatus.PARTIALLY_FILLED) System.out.println(\"OK_PARTIAL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_PARTIAL"]
+    },
+    {
+      "name": "Market order fills against the best available limit price",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        StockExchange ex = new StockExchange();\n        Stock aapl = new Stock(\"AAPL\", \"Apple\");\n        ex.registerStock(aapl);\n        Trader a = ex.registerTrader(\"t1\", \"A\");\n        Trader b = ex.registerTrader(\"t2\", \"B\");\n        ex.placeLimitOrder(a, aapl, OrderSide.SELL, 100, 152.0);\n        Order mkt = ex.placeMarketOrder(b, aapl, OrderSide.BUY, 100);\n        if (mkt.getFilledQuantity() == 100 && mkt.getStatus() == OrderStatus.FILLED) System.out.println(\"OK_MARKET\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_MARKET"]
+    },
+    {
+      "name": "Sell that crosses spread sweeps multiple price levels",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        StockExchange ex = new StockExchange();\n        Stock aapl = new Stock(\"AAPL\", \"Apple\");\n        ex.registerStock(aapl);\n        Trader a = ex.registerTrader(\"t1\", \"A\");\n        Trader b = ex.registerTrader(\"t2\", \"B\");\n        Trader c = ex.registerTrader(\"t3\", \"C\");\n        Trader d = ex.registerTrader(\"t4\", \"D\");\n        ex.placeLimitOrder(a, aapl, OrderSide.BUY, 100, 150.0);\n        ex.placeLimitOrder(b, aapl, OrderSide.BUY, 50, 149.0);\n        ex.placeLimitOrder(c, aapl, OrderSide.SELL, 80, 152.0);\n        Order dave = ex.placeLimitOrder(d, aapl, OrderSide.SELL, 120, 148.0);\n        if (dave.getFilledQuantity() == 120 && dave.getStatus() == OrderStatus.FILLED) System.out.println(\"OK_CROSS\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CROSS"]
+    }
+  ]
+}

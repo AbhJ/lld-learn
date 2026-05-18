@@ -1,0 +1,24 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Book an available room",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\npublic class Main {\n    public static void main(String[] args) {\n        Hotel h = new Hotel(\"X\");\n        h.addRoom(\"DOUBLE\", \"201\");\n        Booking b = h.bookRoom(new Guest(\"J\", \"j@x\", \"1\"), \"DOUBLE\", LocalDate.of(2026,5,10), 2);\n        if (b == null) { System.out.println(\"FAIL\"); System.exit(1); }\n        System.out.println(\"BOOKED_OK\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["BOOKED_OK"]
+    },
+    {
+      "name": "Booking fails when no matching room exists",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\npublic class Main {\n    public static void main(String[] args) {\n        Hotel h = new Hotel(\"X\");\n        h.addRoom(\"SINGLE\", \"101\");\n        Booking b = h.bookRoom(new Guest(\"A\", \"a@x\", \"1\"), \"SUITE\", LocalDate.of(2026,5,10), 1);\n        System.out.println(b == null ? \"NO_ROOM_OK\" : \"WRONG\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["NO_ROOM_OK"],
+      "expectedStdoutNotContains": ["WRONG"]
+    },
+    {
+      "name": "Full flow: book, check-in, room service, check-out bill",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\npublic class Main {\n    public static void main(String[] args) {\n        Hotel h = new Hotel(\"X\");\n        h.addRoom(\"DOUBLE\", \"201\");\n        Booking b = h.bookRoom(new Guest(\"J\", \"j@x\", \"1\"), \"DOUBLE\", LocalDate.of(2026,5,10), 2);\n        h.checkIn(b);\n        h.orderRoomService(\"201\", \"Tea\", 10.0);\n        Bill bill = h.checkOut(b);\n        if (bill == null) { System.out.println(\"FAIL\"); System.exit(1); }\n        System.out.println(bill.getTotal() > 0 ? \"BILL_OK\" : \"BILL_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["BILL_OK"]
+    }
+  ]
+}

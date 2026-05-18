@@ -1,0 +1,23 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Builder constructs pizza with toppings and computes base price",
+      "driver": "/* Test driver */\nimport java.util.ArrayList;\npublic class Main {\n    public static void main(String[] args) {\n        Pizza p = new PizzaBuilder().size(Size.LARGE).crust(Crust.THIN)\n            .addToppings(Topping.MOZZARELLA, Topping.PEPPERONI).build();\n        System.out.println(\"OK_1 PRICE=\" + String.format(\"%.2f\", p.getBasePrice()) + \" NAME=\" + p.getName());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_1", "PRICE=17.49", "NAME=Large Thin"]
+    },
+    {
+      "name": "ExtraCheese decorator increases pizza price by 2.50",
+      "driver": "/* Test driver */\nimport java.util.ArrayList;\nimport java.util.List;\npublic class Main {\n    public static void main(String[] args) {\n        Pizza p = new PizzaBuilder().size(Size.MEDIUM).crust(Crust.REGULAR).addTopping(Topping.MOZZARELLA).build();\n        double base = p.getBasePrice();\n        List<PizzaDecorator> ex = new ArrayList<>(); ex.add(new ExtraCheese());\n        double withExtra = base + ex.stream().mapToDouble(PizzaDecorator::getCost).sum();\n        System.out.println(\"OK_2 BASE=\" + String.format(\"%.2f\", base) + \" WITH=\" + String.format(\"%.2f\", withExtra) + \" DIFF=\" + String.format(\"%.2f\", withExtra - base));\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_2", "BASE=12.99", "WITH=15.49", "DIFF=2.50"]
+    },
+    {
+      "name": "PizzaShop createOrder returns sequential valid order ids",
+      "driver": "/* Test driver */\nimport java.util.ArrayList;\npublic class Main {\n    public static void main(String[] args) {\n        PizzaShop shop = new PizzaShop();\n        Order o1 = shop.createOrder();\n        Order o2 = shop.createOrder();\n        Pizza p = new PizzaBuilder().size(Size.SMALL).build();\n        o1.addPizza(p, new ArrayList<>());\n        System.out.println(\"OK_3 ID1=\" + o1.getId() + \" ID2=\" + o2.getId() + \" STATUS=\" + o1.getStatus() + \" TOTAL=\" + String.format(\"%.2f\", o1.getTotal()));\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_3", "ID1=ORD-001", "ID2=ORD-002", "STATUS=PLACED", "TOTAL=8.99"]
+    }
+  ]
+}

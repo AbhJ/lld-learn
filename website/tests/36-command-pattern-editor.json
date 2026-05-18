@@ -1,0 +1,23 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Insert then undo restores empty document",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Editor ed = new Editor();\n        ed.insert(0, \"Hello\");\n        ed.undo();\n        System.out.println(ed.getText().isEmpty() ? \"UNDO_OK\" : \"UNDO_FAIL:\" + ed.getText());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["UNDO_OK"]
+    },
+    {
+      "name": "Undo then redo replays the change",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Editor ed = new Editor(\"abc\");\n        ed.delete(0, 1);\n        ed.undo();\n        ed.redo();\n        System.out.println(ed.getText().equals(\"bc\") ? \"REDO_OK\" : \"REDO_FAIL:\" + ed.getText());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["REDO_OK"]
+    },
+    {
+      "name": "Memento save and restore round-trips document state",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Document doc = new Document(\"snapshot-me\");\n        DocumentMemento m = doc.save();\n        doc.insert(0, \"GARBAGE-\");\n        doc.restore(m);\n        System.out.println(doc.getText().equals(\"snapshot-me\") ? \"MEMENTO_OK\" : \"MEMENTO_FAIL:\" + doc.getText());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["MEMENTO_OK"]
+    }
+  ]
+}

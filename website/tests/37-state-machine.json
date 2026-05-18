@@ -1,0 +1,23 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Valid sequence of transitions reaches final state",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        StateMachine sm = new StateMachineBuilder(\"Order\")\n                .initialState(\"NEW\").state(\"PAID\").state(\"DONE\")\n                .transition(\"NEW\", \"PAY\", \"PAID\")\n                .transition(\"PAID\", \"SHIP\", \"DONE\")\n                .build();\n        sm.fire(\"PAY\");\n        sm.fire(\"SHIP\");\n        System.out.println(sm.getCurrentStateName().equals(\"DONE\") ? \"FLOW_OK\" : \"FLOW_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["FLOW_OK"]
+    },
+    {
+      "name": "Invalid event keeps state unchanged",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        StateMachine sm = new StateMachineBuilder(\"M\")\n                .initialState(\"A\").state(\"B\")\n                .transition(\"A\", \"GO\", \"B\")\n                .build();\n        boolean ok = sm.fire(\"NOPE\");\n        System.out.println(!ok && sm.getCurrentStateName().equals(\"A\") ? \"INVALID_OK\" : \"INVALID_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["INVALID_OK"]
+    },
+    {
+      "name": "Entry action runs on transition",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        StateMachine sm = new StateMachineBuilder(\"L\")\n                .initialState(\"RED\").state(\"GREEN\")\n                .onEntry(\"GREEN\", new Action() { public void execute(Event e) { System.out.println(\"ENTRY_GREEN\"); } public String getDescription() { return \"\"; } })\n                .transition(\"RED\", \"GO\", \"GREEN\")\n                .build();\n        sm.fire(\"GO\");\n        System.out.println(sm.getCurrentStateName().equals(\"GREEN\") ? \"STATE_OK\" : \"STATE_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["ENTRY_GREEN", "STATE_OK"]
+    }
+  ]
+}

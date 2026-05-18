@@ -1,0 +1,32 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Single elevator serves a request and reaches destination",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ElevatorSystem system = new ElevatorSystem(1, 10);\n        Request r = new Request(0, 5);\n        Elevator e = system.handleRequest(r);\n        if (e == null) { System.out.println(\"FAIL_NO_ASSIGN\"); System.exit(1); }\n        System.out.println(\"ASSIGNED_\" + e.getId());\n        for (int i = 0; i < 6; i++) system.step();\n        if (e.getCurrentFloor() == 5 && !e.hasStops()) {\n            System.out.println(\"REACHED_DEST\");\n        } else {\n            System.out.println(\"WRONG_FLOOR_\" + e.getCurrentFloor());\n        }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["ASSIGNED_1", "REACHED_DEST"],
+      "expectedStdoutNotContains": ["FAIL_NO_ASSIGN", "WRONG_FLOOR_"]
+    },
+    {
+      "name": "Maintenance elevator is skipped by scheduler",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ElevatorSystem system = new ElevatorSystem(2, 10);\n        system.setMaintenance(0, true);\n        Elevator e = system.handleRequest(new Request(0, 4));\n        if (e != null && e.getId() == 2) {\n            System.out.println(\"SKIPPED_MAINT\");\n        } else {\n            System.out.println(\"FAIL_PICKED_\" + (e == null ? \"null\" : e.getId()));\n        }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["SKIPPED_MAINT"],
+      "expectedStdoutNotContains": ["FAIL_PICKED_"]
+    },
+    {
+      "name": "LOOK strategy serves multiple requests and idles",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ElevatorSystem system = new ElevatorSystem(1, 10);\n        system.setStrategy(new LOOKStrategy());\n        system.handleRequest(new Request(0, 7));\n        system.handleRequest(new Request(2, 5));\n        system.stepN(15);\n        if (system.allIdle()) {\n            System.out.println(\"ALL_IDLE_OK\");\n        } else {\n            System.out.println(\"STILL_BUSY\");\n        }\n        Elevator e = system.getElevator(0);\n        System.out.println(\"FINAL_FLOOR_\" + e.getCurrentFloor());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["ALL_IDLE_OK", "FINAL_FLOOR_7"],
+      "expectedStdoutNotContains": ["STILL_BUSY"]
+    },
+    {
+      "name": "Elevator transitions IDLE -> MOVING_UP -> IDLE",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        ElevatorSystem system = new ElevatorSystem(1, 10);\n        Elevator e = system.handleRequest(new Request(0, 8));\n        System.out.println(\"STATE_INIT_\" + e.getState());\n        system.step();\n        System.out.println(\"STATE_RUN_\" + e.getState());\n        for (int i = 0; i < 12; i++) system.step();\n        System.out.println(\"STATE_END_\" + e.getState());\n        if (e.getState() == ElevatorState.IDLE && !e.hasStops()) {\n            System.out.println(\"FINISHED_OK\");\n        }\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["STATE_INIT_IDLE", "STATE_RUN_MOVING_UP", "STATE_END_IDLE", "FINISHED_OK"]
+    }
+  ]
+}

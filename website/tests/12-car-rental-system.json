@@ -1,0 +1,36 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Daily pricing computes rate times days",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\n\npublic class Main {\n    public static void main(String[] args) {\n        RentalSystem sys = new RentalSystem();\n        Location loc = new Location(\"L1\", \"Main\", \"1 St\");\n        Vehicle suv = sys.createVehicle(\"SUV\", \"V1\", \"T\", \"RAV4\", 2024, \"P1\", 100.00, loc);\n        sys.addVehicle(suv);\n        Customer cust = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"DL1\");\n        Reservation r = new Reservation.Builder(cust, suv)\n            .startDate(LocalDate.of(2026,5,15))\n            .endDate(LocalDate.of(2026,5,18))\n            .pickupLocation(loc)\n            .pricingStrategy(new DailyPricing())\n            .build();\n        Reservation made = sys.makeReservation(r);\n        if (made == null) { System.out.println(\"FAIL_RES\"); return; }\n        if (Math.abs(r.getVehicleCost() - 300.0) < 0.01 && !suv.isAvailable()) System.out.println(\"DAILY_OK\");\n        else System.out.println(\"DAILY_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["DAILY_OK"]
+    },
+    {
+      "name": "Weekly pricing applies discount over a full week",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\n\npublic class Main {\n    public static void main(String[] args) {\n        RentalSystem sys = new RentalSystem();\n        Location loc = new Location(\"L1\", \"Main\", \"1 St\");\n        Vehicle car = sys.createVehicle(\"CAR\", \"V1\", \"T\", \"Camry\", 2024, \"P1\", 50.00, loc);\n        sys.addVehicle(car);\n        Customer cust = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"DL1\");\n        Reservation r = new Reservation.Builder(cust, car)\n            .startDate(LocalDate.of(2026,5,15))\n            .endDate(LocalDate.of(2026,5,22))\n            .pickupLocation(loc)\n            .pricingStrategy(new WeeklyPricing())\n            .build();\n        sys.makeReservation(r);\n        if (Math.abs(r.getVehicleCost() - 297.5) < 0.01) System.out.println(\"WEEKLY_OK\");\n        else System.out.println(\"WEEKLY_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["WEEKLY_OK"]
+    },
+    {
+      "name": "Double booking the same vehicle is rejected",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\n\npublic class Main {\n    public static void main(String[] args) {\n        RentalSystem sys = new RentalSystem();\n        Location loc = new Location(\"L1\", \"Main\", \"1 St\");\n        Vehicle suv = sys.createVehicle(\"SUV\", \"V1\", \"T\", \"RAV4\", 2024, \"P1\", 100.00, loc);\n        sys.addVehicle(suv);\n        Customer cust1 = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"DL1\");\n        Customer cust2 = new Customer(\"C2\", \"Bob\", \"b@e\", \"555\", \"DL2\");\n        Reservation r1 = new Reservation.Builder(cust1, suv).startDate(LocalDate.of(2026,5,15)).endDate(LocalDate.of(2026,5,18)).pickupLocation(loc).build();\n        if (sys.makeReservation(r1) == null) { System.out.println(\"FAIL_FIRST\"); return; }\n        Reservation r2 = new Reservation.Builder(cust2, suv).startDate(LocalDate.of(2026,5,20)).endDate(LocalDate.of(2026,5,22)).pickupLocation(loc).build();\n        Reservation made2 = sys.makeReservation(r2);\n        System.out.println(made2 == null ? \"DOUBLE_BOOK_REJECTED\" : \"DOUBLE_BOOK_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["DOUBLE_BOOK_REJECTED"],
+      "expectedStdoutNotContains": ["DOUBLE_BOOK_FAIL"]
+    },
+    {
+      "name": "Completing a reservation releases the vehicle",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\n\npublic class Main {\n    public static void main(String[] args) {\n        RentalSystem sys = new RentalSystem();\n        Location loc = new Location(\"L1\", \"Main\", \"1 St\");\n        Vehicle suv = sys.createVehicle(\"SUV\", \"V1\", \"T\", \"RAV4\", 2024, \"P1\", 100.00, loc);\n        sys.addVehicle(suv);\n        Customer cust = new Customer(\"C1\", \"Alice\", \"a@e\", \"555\", \"DL1\");\n        Reservation r = new Reservation.Builder(cust, suv).startDate(LocalDate.of(2026,5,15)).endDate(LocalDate.of(2026,5,18)).pickupLocation(loc).build();\n        sys.makeReservation(r);\n        if (suv.isAvailable()) { System.out.println(\"FAIL_STATE_PRE\"); return; }\n        Bill bill = sys.completeReservation(r);\n        if (bill == null) { System.out.println(\"FAIL_BILL\"); return; }\n        if (suv.isAvailable() && r.getStatus() == Reservation.Status.COMPLETED) System.out.println(\"COMPLETE_OK\");\n        else System.out.println(\"COMPLETE_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["COMPLETE_OK"]
+    },
+    {
+      "name": "Search filters by type and location",
+      "driver": "/* Test driver */\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        RentalSystem sys = new RentalSystem();\n        Location loc1 = new Location(\"L1\", \"Downtown\", \"1 St\");\n        Location loc2 = new Location(\"L2\", \"Airport\", \"2 St\");\n        sys.addVehicle(sys.createVehicle(\"SUV\", \"V1\", \"T\", \"RAV4\", 2024, \"P1\", 100.00, loc1));\n        sys.addVehicle(sys.createVehicle(\"SUV\", \"V2\", \"F\", \"Explorer\", 2023, \"P2\", 90.00, loc2));\n        sys.addVehicle(sys.createVehicle(\"CAR\", \"V3\", \"T\", \"Camry\", 2024, \"P3\", 50.00, loc1));\n        List<Vehicle> suvs = sys.searchAvailable(\"SUV\");\n        List<Vehicle> dtSUVs = sys.searchAvailable(\"SUV\", loc1);\n        if (suvs.size() == 2 && dtSUVs.size() == 1 && dtSUVs.get(0).getVehicleId().equals(\"V1\")) System.out.println(\"SEARCH_OK\");\n        else System.out.println(\"SEARCH_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["SEARCH_OK"]
+    }
+  ]
+}

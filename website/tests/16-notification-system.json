@@ -1,0 +1,26 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Basic email notification sends successfully",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        NotificationService s = new NotificationService(10);\n        s.registerChannel(new EmailChannel());\n        Notification n = NotificationFactory.createEmailNotification(\"U-1\",\"a@x.com\",\"S\",\"B\",Priority.HIGH);\n        boolean ok = s.send(n);\n        System.out.println(ok && s.getSentCount() == 1 ? \"SEND_OK\" : \"SEND_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["SEND_OK"],
+      "expectedStdoutNotContains": ["SEND_FAIL"]
+    },
+    {
+      "name": "Throttler blocks 3rd send when limit is 2",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        NotificationService s = new NotificationService(2);\n        s.registerChannel(new EmailChannel());\n        s.send(NotificationFactory.createEmailNotification(\"U-1\",\"a@x.com\",\"S1\",\"B\",Priority.LOW));\n        s.send(NotificationFactory.createEmailNotification(\"U-1\",\"a@x.com\",\"S2\",\"B\",Priority.LOW));\n        s.send(NotificationFactory.createEmailNotification(\"U-1\",\"a@x.com\",\"S3\",\"B\",Priority.LOW));\n        System.out.println(s.getThrottledCount() == 1 ? \"THROTTLE_OK\" : \"THROTTLE_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["THROTTLE_OK"],
+      "expectedStdoutNotContains": ["THROTTLE_FAIL"]
+    },
+    {
+      "name": "RetryDecorator succeeds after simulated failures",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        RetryDecorator retry = new RetryDecorator(new EmailChannel(), 3);\n        retry.setSimulatedFailures(2);\n        NotificationService s = new NotificationService(10);\n        s.registerChannel(retry);\n        boolean ok = s.send(NotificationFactory.createEmailNotification(\"U-1\",\"a@x.com\",\"S\",\"B\",Priority.HIGH));\n        System.out.println(ok ? \"RETRY_OK\" : \"RETRY_FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["RETRY_OK"],
+      "expectedStdoutNotContains": ["RETRY_FAIL"]
+    }
+  ]
+}

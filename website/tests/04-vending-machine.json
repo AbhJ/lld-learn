@@ -1,0 +1,40 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Exact-change purchase dispenses product",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        VendingMachine m = new VendingMachine(new GreedyChangeStrategy());\n        m.getInventory().addProduct(new Product(\"A1\", \"Cola\", 50), 1);\n        m.insertCoin(Coin.QUARTER);\n        m.insertCoin(Coin.QUARTER);\n        m.selectProduct(\"A1\");\n        if (m.getInventory().getQuantity(\"A1\") == 0) System.out.println(\"OK_PURCHASE\");\n        else System.out.println(\"FAIL_PURCHASE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_PURCHASE"],
+      "expectedStdoutNotContains": ["FAIL_PURCHASE"]
+    },
+    {
+      "name": "Overpay returns change and resets inserted amount",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        VendingMachine m = new VendingMachine(new GreedyChangeStrategy());\n        m.getInventory().addProduct(new Product(\"A1\", \"Cola\", 50), 1);\n        m.insertCoin(Coin.QUARTER);\n        m.insertCoin(Coin.QUARTER);\n        m.insertCoin(Coin.QUARTER);\n        m.insertCoin(Coin.QUARTER);\n        m.selectProduct(\"A1\");\n        if (m.getInsertedAmount() == 0) System.out.println(\"OK_CHANGE\");\n        else System.out.println(\"FAIL_CHANGE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CHANGE"],
+      "expectedStdoutNotContains": ["FAIL_CHANGE"]
+    },
+    {
+      "name": "Insufficient funds does not dispense",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        VendingMachine m = new VendingMachine(new GreedyChangeStrategy());\n        m.getInventory().addProduct(new Product(\"A1\", \"Cola\", 50), 1);\n        m.insertCoin(Coin.DIME);\n        m.selectProduct(\"A1\");\n        if (m.getInventory().getQuantity(\"A1\") == 1) System.out.println(\"OK_INSUFFICIENT\");\n        else System.out.println(\"FAIL_INSUFFICIENT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_INSUFFICIENT"],
+      "expectedStdoutNotContains": ["FAIL_INSUFFICIENT"]
+    },
+    {
+      "name": "Cancel refunds and returns to idle",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        VendingMachine m = new VendingMachine(new GreedyChangeStrategy());\n        m.getInventory().addProduct(new Product(\"A1\", \"Cola\", 50), 1);\n        m.insertCoin(Coin.QUARTER);\n        m.insertCoin(Coin.DIME);\n        m.cancel();\n        if (m.getInsertedAmount() == 0) System.out.println(\"OK_CANCEL\");\n        else System.out.println(\"FAIL_CANCEL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CANCEL"],
+      "expectedStdoutNotContains": ["FAIL_CANCEL"]
+    },
+    {
+      "name": "Sold-out product is rejected after stock depleted",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        VendingMachine m = new VendingMachine(new GreedyChangeStrategy());\n        m.getInventory().addProduct(new Product(\"A1\", \"Cola\", 50), 1);\n        m.insertCoin(Coin.QUARTER);\n        m.insertCoin(Coin.QUARTER);\n        m.selectProduct(\"A1\");\n        m.insertCoin(Coin.QUARTER);\n        m.insertCoin(Coin.QUARTER);\n        m.selectProduct(\"A1\");\n        if (m.getInventory().getQuantity(\"A1\") == 0) System.out.println(\"OK_SOLD_OUT\");\n        else System.out.println(\"FAIL_SOLD_OUT\");\n        m.cancel();\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_SOLD_OUT", "SOLD OUT"],
+      "expectedStdoutNotContains": ["FAIL_SOLD_OUT"]
+    }
+  ]
+}

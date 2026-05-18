@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Basic set, get, exists, delete lifecycle",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        KVStore s = new KVStore();\n        s.set(\"k\", \"v\");\n        if (\"v\".equals(s.get(\"k\")) && s.exists(\"k\")) System.out.println(\"OK_GET\");\n        s.delete(\"k\");\n        if (s.get(\"k\") == null && !s.exists(\"k\")) System.out.println(\"OK_DELETE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_GET", "OK_DELETE"]
+    },
+    {
+      "name": "TTL expiration: key disappears after window elapses",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws InterruptedException {\n        KVStore s = new KVStore();\n        s.set(\"session\", \"abc\", 100);\n        if (\"abc\".equals(s.get(\"session\"))) System.out.println(\"OK_TTL_SET\");\n        Thread.sleep(200);\n        if (s.get(\"session\") == null) System.out.println(\"OK_TTL_EXPIRED\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_TTL_SET", "OK_TTL_EXPIRED"]
+    },
+    {
+      "name": "Observer fan-out fires onSet and onDelete",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        final int[] counts = new int[3];\n        KVStore s = new KVStore();\n        s.addObserver(new KVStoreObserver() {\n            public void onSet(String k, String v, long t) { counts[0]++; }\n            public void onDelete(String k) { counts[1]++; }\n            public void onExpire(String k) { counts[2]++; }\n        });\n        s.set(\"a\", \"1\");\n        s.set(\"b\", \"2\");\n        s.delete(\"a\");\n        if (counts[0] == 2 && counts[1] == 1) System.out.println(\"OK_OBSERVER\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_OBSERVER"]
+    },
+    {
+      "name": "AppendOnlyLog persistence records all mutations",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        KVStore s = new KVStore(new AppendOnlyLogPersistence());\n        s.set(\"x\", \"1\");\n        s.set(\"y\", \"2\");\n        s.delete(\"x\");\n        if (s.getLog().size() == 3) System.out.println(\"OK_LOG_SIZE\");\n        Command first = s.getLog().get(0);\n        if (first.getType() == Command.Type.SET && \"x\".equals(first.getKey())) System.out.println(\"OK_LOG_CONTENT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_LOG_SIZE", "OK_LOG_CONTENT"]
+    },
+    {
+      "name": "cleanupExpired drops expired keys, keeps live ones",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) throws InterruptedException {\n        KVStore s = new KVStore();\n        s.set(\"a\", \"1\", 50);\n        s.set(\"b\", \"2\");\n        Thread.sleep(120);\n        s.cleanupExpired();\n        if (s.size() == 1 && \"2\".equals(s.get(\"b\"))) System.out.println(\"OK_CLEANUP\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_CLEANUP"]
+    }
+  ]
+}

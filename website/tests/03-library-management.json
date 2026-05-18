@@ -1,0 +1,31 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Borrow and return reduces and restores availability",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\npublic class Main {\n    public static void main(String[] args) {\n        Member.resetCounter();\n        Library lib = new Library(\"Test\");\n        Book b = lib.addBook(\"ISBN1\", \"Book1\", \"Auth\", 2020, 1);\n        Member m = lib.registerMember(\"Alice\");\n        BorrowRecord r = lib.borrowBook(m, b, LocalDate.of(2026, 1, 1));\n        if (r == null) { System.out.println(\"FAIL_BORROW\"); System.exit(1); }\n        System.out.println(\"BORROWED_OK\");\n        BorrowRecord r2 = lib.borrowBook(m, b, LocalDate.of(2026, 1, 1));\n        System.out.println(r2 == null ? \"NO_COPIES_OK\" : \"WRONG_GOT_COPY\");\n        double fine = lib.returnBook(r, LocalDate.of(2026, 1, 5));\n        System.out.println(\"FINE_\" + (int)fine);\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["BORROWED_OK", "NO_COPIES_OK", "FINE_0"],
+      "expectedStdoutNotContains": ["FAIL_BORROW", "WRONG_GOT_COPY"]
+    },
+    {
+      "name": "Daily fine charges per day overdue",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\npublic class Main {\n    public static void main(String[] args) {\n        Member.resetCounter();\n        Library lib = new Library(\"Test\");\n        Book b = lib.addBook(\"ISBN1\", \"Book1\", \"Auth\", 2020, 1);\n        Member m = lib.registerMember(\"Alice\");\n        BorrowRecord r = lib.borrowBook(m, b, LocalDate.of(2026, 1, 1));\n        lib.setFineStrategy(new DailyFine(2.0));\n        double fine = lib.returnBook(r, LocalDate.of(2026, 1, 21));\n        System.out.println(\"DAILY_FINE_\" + (int)fine);\n        if ((int)fine == 12) System.out.println(\"FINE_CORRECT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["DAILY_FINE_12", "FINE_CORRECT"]
+    },
+    {
+      "name": "Search strategies (Title/Author/ISBN) return correct match counts",
+      "driver": "/* Test driver */\nimport java.util.List;\npublic class Main {\n    public static void main(String[] args) {\n        Member.resetCounter();\n        Library lib = new Library(\"Test\");\n        lib.addBook(\"ISBN-A\", \"Java Concurrency\", \"Goetz\", 2006, 1);\n        lib.addBook(\"ISBN-B\", \"Effective Java\", \"Bloch\", 2018, 1);\n        lib.addBook(\"ISBN-C\", \"Clean Code\", \"Martin\", 2008, 1);\n        lib.setSearchStrategy(new TitleSearch());\n        List<Book> r1 = lib.search(\"Java\");\n        System.out.println(\"TITLE_HITS_\" + r1.size());\n        lib.setSearchStrategy(new AuthorSearch());\n        List<Book> r2 = lib.search(\"Bloch\");\n        System.out.println(\"AUTHOR_HITS_\" + r2.size());\n        lib.setSearchStrategy(new ISBNSearch());\n        List<Book> r3 = lib.search(\"ISBN-C\");\n        System.out.println(\"ISBN_HITS_\" + r3.size());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["TITLE_HITS_2", "AUTHOR_HITS_1", "ISBN_HITS_1"]
+    },
+    {
+      "name": "Reservation is fulfilled when borrowed copy is returned",
+      "driver": "/* Test driver */\nimport java.time.LocalDate;\npublic class Main {\n    public static void main(String[] args) {\n        Member.resetCounter();\n        Library lib = new Library(\"Test\");\n        Book b = lib.addBook(\"ISBN-X\", \"BookX\", \"Auth\", 2020, 1);\n        Member alice = lib.registerMember(\"Alice\");\n        Member bob = lib.registerMember(\"Bob\");\n        LocalDate d = LocalDate.of(2026, 1, 1);\n        BorrowRecord r = lib.borrowBook(alice, b, d);\n        Reservation res = lib.reserveBook(bob, b, d);\n        if (res == null) { System.out.println(\"FAIL_RES\"); System.exit(1); }\n        System.out.println(\"RESERVED_OK\");\n        System.out.println(\"FULFILLED_BEFORE_\" + res.isFulfilled());\n        lib.returnBook(r, d.plusDays(3));\n        System.out.println(\"FULFILLED_AFTER_\" + res.isFulfilled());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["RESERVED_OK", "FULFILLED_BEFORE_false", "FULFILLED_AFTER_true"],
+      "expectedStdoutNotContains": ["FAIL_RES"]
+    }
+  ]
+}

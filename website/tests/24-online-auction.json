@@ -1,0 +1,35 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Highest bid wins and current highest tracks correctly",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        AuctionSystem sys = new AuctionSystem();\n        Bidder a = sys.registerBidder(\"b1\", \"Alice\");\n        Bidder b = sys.registerBidder(\"b2\", \"Bob\");\n        Item w = new Item(\"i1\", \"Watch\", \"x\", 100.0);\n        Auction au = sys.createAuction(\"a1\", w, 100.0, 10.0, new WinnerStrategy.HighestBidStrategy());\n        au.start();\n        au.placeBid(a, 150.0);\n        au.placeBid(b, 200.0);\n        au.placeBid(a, 250.0);\n        if (au.getCurrentHighestBid() == 250.0) System.out.println(\"OK_HIGHEST\");\n        WinnerStrategy.WinnerResult r = au.close();\n        if (r != null && r.getWinner() == a && r.getWinningPrice() == 250.0) System.out.println(\"OK_WINNER\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_HIGHEST", "OK_WINNER"]
+    },
+    {
+      "name": "Bid below required minimum increment is rejected",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        AuctionSystem sys = new AuctionSystem();\n        Bidder a = sys.registerBidder(\"b1\", \"Alice\");\n        Item w = new Item(\"i1\", \"X\", \"x\", 100.0);\n        Auction au = sys.createAuction(\"a1\", w, 100.0, 10.0, new WinnerStrategy.HighestBidStrategy());\n        au.start();\n        boolean ok1 = au.placeBid(a, 150.0);\n        boolean ok2 = au.placeBid(a, 155.0);\n        if (ok1 && !ok2) System.out.println(\"OK_INCREMENT\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_INCREMENT"]
+    },
+    {
+      "name": "Auction returns no winner when reserve price is not met",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        AuctionSystem sys = new AuctionSystem();\n        Bidder a = sys.registerBidder(\"b1\", \"A\");\n        Item w = new Item(\"i1\", \"X\", \"x\", 500.0);\n        Auction au = sys.createAuction(\"a1\", w, 100.0, 10.0, new WinnerStrategy.HighestBidStrategy());\n        au.start();\n        au.placeBid(a, 200.0);\n        WinnerStrategy.WinnerResult r = au.close();\n        if (r == null) System.out.println(\"OK_RESERVE_NOT_MET\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_RESERVE_NOT_MET"]
+    },
+    {
+      "name": "Vickrey (second-price) winner pays second-highest amount",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        AuctionSystem sys = new AuctionSystem();\n        Bidder a = sys.registerBidder(\"b1\", \"A\");\n        Bidder b = sys.registerBidder(\"b2\", \"B\");\n        Item w = new Item(\"i1\", \"X\", \"x\", 100.0);\n        Auction au = sys.createAuction(\"a1\", w, 100.0, 10.0, new WinnerStrategy.SecondPriceStrategy());\n        au.start();\n        au.placeBid(a, 150.0);\n        au.placeBid(b, 200.0);\n        au.placeBid(a, 300.0);\n        WinnerStrategy.WinnerResult r = au.close();\n        if (r != null && r.getWinner() == a && Math.abs(r.getWinningPrice() - 200.0) < 0.01) System.out.println(\"OK_SECOND_PRICE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_SECOND_PRICE"]
+    },
+    {
+      "name": "Bidding is rejected before auction starts",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        AuctionSystem sys = new AuctionSystem();\n        Bidder a = sys.registerBidder(\"b1\", \"A\");\n        Item w = new Item(\"i1\", \"X\", \"x\", 100.0);\n        Auction au = sys.createAuction(\"a1\", w, 100.0, 10.0, new WinnerStrategy.HighestBidStrategy());\n        boolean placed = au.placeBid(a, 150.0);\n        if (!placed) System.out.println(\"OK_REJECT_BEFORE_START\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_REJECT_BEFORE_START"]
+    }
+  ]
+}

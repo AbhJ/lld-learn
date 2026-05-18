@@ -1,0 +1,40 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Scheduler executes both submitted tasks",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Scheduler s = new Scheduler(1);\n        Task low = new SimpleTask(\"low\", TaskPriority.LOW, \"low\");\n        Task high = new SimpleTask(\"high\", TaskPriority.HIGH, \"high\");\n        s.submit(low);\n        s.submit(high);\n        s.runAll();\n        System.out.println(low.getState() == Task.State.COMPLETED ? \"OK_LOW_DONE\" : \"FAIL\");\n        System.out.println(high.getState() == Task.State.COMPLETED ? \"OK_HIGH_DONE\" : \"FAIL\");\n        System.out.println(\"OK_RESULTS=\" + s.getResults().size());\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_LOW_DONE", "OK_HIGH_DONE", "OK_RESULTS=2"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Dependent task runs after its dependency",
+      "driver": "/* Test driver */\nimport java.util.List;\npublic class Main {\n    public static void main(String[] args) {\n        Scheduler s = new Scheduler(1);\n        Task t1 = new SimpleTask(\"t1\", TaskPriority.LOW, \"first\");\n        Task t2 = new SimpleTask(\"t2\", TaskPriority.HIGH, \"second\");\n        s.submit(t1);\n        s.submit(t2);\n        s.addDependency(t2, t1);\n        s.runAll();\n        List<TaskResult> rs = s.getResults();\n        boolean order = rs.size() == 2 && rs.get(0).getTaskId().equals(t1.getTaskId()) && rs.get(1).getTaskId().equals(t2.getTaskId());\n        System.out.println(order ? \"OK_ORDER_T1_FIRST\" : \"FAIL\");\n        System.out.println(t1.getState() == Task.State.COMPLETED && t2.getState() == Task.State.COMPLETED ? \"OK_BOTH_DONE\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_ORDER_T1_FIRST", "OK_BOTH_DONE"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Cancelled task is skipped during execution",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Scheduler s = new Scheduler(1);\n        Task t1 = new SimpleTask(\"t1\", TaskPriority.LOW, \"cancel me\");\n        Task t2 = new SimpleTask(\"t2\", TaskPriority.MEDIUM, \"run me\");\n        s.submit(t1);\n        s.submit(t2);\n        s.cancel(t1);\n        s.runAll();\n        System.out.println(t1.getState() == Task.State.CANCELLED ? \"OK_T1_CANCELLED\" : \"FAIL\");\n        System.out.println(t2.getState() == Task.State.COMPLETED ? \"OK_T2_DONE\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_T1_CANCELLED", "OK_T2_DONE"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "FIFO scheduling strategy ignores priority and runs oldest first",
+      "driver": "/* Test driver */\nimport java.util.List;\npublic class Main {\n    public static void main(String[] args) {\n        Scheduler s = new Scheduler(1, new FifoSchedulingStrategy());\n        Task low1 = new SimpleTask(\"first\", TaskPriority.LOW, \"submitted first\");\n        Task crit2 = new SimpleTask(\"second\", TaskPriority.CRITICAL, \"submitted second\");\n        s.submit(low1);\n        s.submit(crit2);\n        s.runAll();\n        List<TaskResult> rs = s.getResults();\n        boolean order = rs.size() == 2 && rs.get(0).getTaskId().equals(low1.getTaskId());\n        System.out.println(order ? \"OK_FIFO_FIRST_FIRST\" : \"FAIL\");\n        System.out.println(s.getSchedulingStrategy().name().equals(\"FIFO\") ? \"OK_STRAT_FIFO\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FIFO_FIRST_FIRST", "OK_STRAT_FIFO"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Completion listener fires on task success",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Scheduler s = new Scheduler(1);\n        s.addListener(new LoggingTaskListener());\n        Task t = new SimpleTask(\"hello\", TaskPriority.HIGH, \"do it\");\n        s.submit(t);\n        s.runAll();\n        System.out.println(\"OK_LISTENER_DRIVEN\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["[event] completed: hello", "OK_LISTENER_DRIVEN"],
+      "expectedStdoutNotContains": ["FAIL"]
+    }
+  ]
+}

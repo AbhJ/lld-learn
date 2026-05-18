@@ -1,0 +1,40 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Pawn double-push from start advances and flips turn",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Game g = new Game(new Player(\"A\", Color.WHITE), new Player(\"B\", Color.BLACK));\n        boolean ok = g.makeMove(new Position(6,4), new Position(4,4));\n        if (ok && g.getCurrentTurn() == Color.BLACK) System.out.println(\"OK_PAWN\");\n        else System.out.println(\"FAIL_PAWN\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_PAWN"],
+      "expectedStdoutNotContains": ["FAIL_PAWN"]
+    },
+    {
+      "name": "Wrong-color move on white's turn is rejected",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Game g = new Game(new Player(\"A\", Color.WHITE), new Player(\"B\", Color.BLACK));\n        boolean ok = g.makeMove(new Position(1,4), new Position(3,4));\n        if (!ok && g.getCurrentTurn() == Color.WHITE) System.out.println(\"OK_REJECT_TURN\");\n        else System.out.println(\"FAIL_REJECT_TURN\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_REJECT_TURN"],
+      "expectedStdoutNotContains": ["FAIL_REJECT_TURN"]
+    },
+    {
+      "name": "Knight move accepted and illegal pawn jump rejected",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Game g = new Game(new Player(\"A\", Color.WHITE), new Player(\"B\", Color.BLACK));\n        boolean ok = g.makeMove(new Position(7,6), new Position(5,5));\n        boolean bad = g.makeMove(new Position(1,0), new Position(4,0));\n        if (ok && !bad) System.out.println(\"OK_KNIGHT_AND_INVALID\");\n        else System.out.println(\"FAIL_\" + ok + \"_\" + bad);\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_KNIGHT_AND_INVALID"],
+      "expectedStdoutNotContains": ["FAIL_"]
+    },
+    {
+      "name": "Scholar's mate ends the game",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Game g = new Game(new Player(\"A\", Color.WHITE), new Player(\"B\", Color.BLACK));\n        g.makeMove(new Position(6,4), new Position(4,4));\n        g.makeMove(new Position(1,4), new Position(3,4));\n        g.makeMove(new Position(7,5), new Position(4,2));\n        g.makeMove(new Position(0,1), new Position(2,2));\n        g.makeMove(new Position(7,3), new Position(3,7));\n        g.makeMove(new Position(0,6), new Position(2,5));\n        boolean ok = g.makeMove(new Position(3,7), new Position(1,5));\n        if (ok && g.isGameOver()) System.out.println(\"OK_MATE\");\n        else System.out.println(\"FAIL_MATE\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_MATE"],
+      "expectedStdoutNotContains": ["FAIL_MATE"]
+    },
+    {
+      "name": "Undo restores piece and turn",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        Game g = new Game(new Player(\"A\", Color.WHITE), new Player(\"B\", Color.BLACK));\n        g.makeMove(new Position(6,4), new Position(4,4));\n        boolean undone = g.undoLastMove();\n        if (undone && g.getCurrentTurn() == Color.WHITE && g.getBoard().getPieceAt(new Position(6,4)) instanceof Pawn) System.out.println(\"OK_UNDO\");\n        else System.out.println(\"FAIL_UNDO\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_UNDO"],
+      "expectedStdoutNotContains": ["FAIL_UNDO"]
+    }
+  ]
+}

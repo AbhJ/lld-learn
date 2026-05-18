@@ -1,0 +1,40 @@
+{
+  "variant": "naive",
+  "cases": [
+    {
+      "name": "Basic publish delivers to subscribed consumer",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        MessageBroker b = new MessageBroker(DeliveryGuarantee.AT_LEAST_ONCE);\n        b.createTopic(\"orders\");\n        ConcreteSubscriber s = new ConcreteSubscriber(\"S1\",\"Sub1\");\n        b.subscribe(\"orders\", s);\n        Publisher p = new Publisher(\"P1\",\"Pub1\", b);\n        p.publish(\"orders\",\"hello\");\n        System.out.println(s.getMessagesReceived() == 1 ? \"OK_DELIVERED_1\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_DELIVERED_1"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Payload-contains filter drops non-matching messages",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        MessageBroker b = new MessageBroker(DeliveryGuarantee.AT_LEAST_ONCE);\n        b.createTopic(\"t\");\n        ConcreteSubscriber s = new ConcreteSubscriber(\"S1\",\"Sub1\", new PayloadContainsFilter(\"urgent\"));\n        b.subscribe(\"t\", s);\n        Publisher p = new Publisher(\"P1\",\"Pub1\", b);\n        p.publish(\"t\",\"ignore me\");\n        p.publish(\"t\",\"urgent please\");\n        System.out.println(s.getMessagesReceived() == 1 ? \"OK_FILTER_PASSED_1\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_FILTER_PASSED_1"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Unsubscribe stops further deliveries to that subscriber",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        MessageBroker b = new MessageBroker(DeliveryGuarantee.AT_LEAST_ONCE);\n        b.createTopic(\"t\");\n        ConcreteSubscriber a = new ConcreteSubscriber(\"A\",\"SubA\");\n        ConcreteSubscriber c = new ConcreteSubscriber(\"C\",\"SubC\");\n        b.subscribe(\"t\", a);\n        b.subscribe(\"t\", c);\n        Publisher p = new Publisher(\"P1\",\"Pub1\", b);\n        p.publish(\"t\",\"msg1\");\n        b.unsubscribe(\"t\", a);\n        p.publish(\"t\",\"msg2\");\n        System.out.println(a.getMessagesReceived() == 1 ? \"OK_A_GOT_1\" : \"FAIL\");\n        System.out.println(c.getMessagesReceived() == 2 ? \"OK_C_GOT_2\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_A_GOT_1", "OK_C_GOT_2"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Acknowledge moves message out of pending queue",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        MessageBroker b = new MessageBroker(DeliveryGuarantee.AT_LEAST_ONCE);\n        b.createTopic(\"t\");\n        ConcreteSubscriber s = new ConcreteSubscriber(\"S1\",\"Sub1\");\n        b.subscribe(\"t\", s);\n        Publisher p = new Publisher(\"P1\",\"Pub1\", b);\n        Message m = p.publish(\"t\",\"x\");\n        MessageQueue q = b.getQueue(s);\n        int sizeBefore = q.size();\n        b.acknowledgeMessage(s, m.getMessageId());\n        System.out.println(sizeBefore == 1 ? \"OK_QSIZE_1\" : \"FAIL\");\n        System.out.println(q.getAcknowledgedCount() == 1 ? \"OK_ACKED_1\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_QSIZE_1", "OK_ACKED_1"],
+      "expectedStdoutNotContains": ["FAIL"]
+    },
+    {
+      "name": "Publishing to unknown topic is a no-op",
+      "driver": "/* Test driver */\npublic class Main {\n    public static void main(String[] args) {\n        MessageBroker b = new MessageBroker(DeliveryGuarantee.AT_LEAST_ONCE);\n        b.createTopic(\"missing\");\n        Publisher p = new Publisher(\"P\",\"Pub\", b);\n        p.publish(\"nonexistent\",\"x\");\n        System.out.println(b.getTotalPublished() == 0 ? \"OK_NO_PUBLISH\" : \"FAIL\");\n        System.out.println(b.getTopicCount() == 1 ? \"OK_TOPIC_COUNT_1\" : \"FAIL\");\n    }\n}\n",
+      "expectedExitCode": 0,
+      "expectedStdoutContains": ["OK_NO_PUBLISH", "OK_TOPIC_COUNT_1"],
+      "expectedStdoutNotContains": ["FAIL"]
+    }
+  ]
+}
