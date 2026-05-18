@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Abhijay (abj). All rights reserved.
+ *
+ * This source code is proprietary and confidential. Unauthorized copying,
+ * modification, distribution, or use of this file, via any medium, is
+ * strictly prohibited without prior written permission of the author.
+ */
+// command/CellCommand.java — Undoable command for cell value changes
+public class CellCommand {                                // Command pattern = encapsulates an action for undo/redo
+    private Spreadsheet spreadsheet;                      // private = target of the command
+    private String cellId;                                // private = which cell this command affects
+    private CellMemento previousState;                    // private = saved state for undo
+    private CellValue newValue;                           // private = the new value to apply
+
+    public CellCommand(Spreadsheet spreadsheet, String cellId, CellValue newValue) {
+        this.spreadsheet = spreadsheet;
+        this.cellId = cellId;
+        this.newValue = newValue;
+    }
+
+    public void execute() {
+        Cell cell = spreadsheet.getOrCreateCell(cellId);
+        this.previousState = cell.saveState();
+        spreadsheet.setCellValueInternal(cellId, newValue);
+    }
+
+    public void undo() {
+        Cell cell = spreadsheet.getOrCreateCell(cellId);
+        cell.restoreState(previousState);
+        spreadsheet.recalculateDependents(cellId);
+    }
+
+    public void redo() {
+        spreadsheet.setCellValueInternal(cellId, newValue);
+    }
+
+    public String getCellId() { return cellId; }
+}
