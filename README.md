@@ -1,6 +1,92 @@
 # Low-Level Design Problems in Java
 
-A structured learning repository with **50 Low-Level Design problems**, each with complete, runnable Java code. Built for learners who want to deeply understand object-oriented design, architectural patterns, and clean code practices.
+A structured learning repository with **50 Low-Level Design problems**, each with complete, runnable Java code. Built for learners who want to deeply understand object-oriented design, architectural patterns, and clean code practices. 
+
+Hosted @ https://abhj.github.io/lld-learn - **Only UI, cannot run tests here.**
+
+---
+
+
+## Interactive Website, With Tests (Local Learning Tool)
+
+The repo ships with a **single-page web app** in [website/](website/) that turns this codebase into an interactive learning environment — like LeetCode, but for LLD. You can browse all 50 problems, read the problem statement and patterns, view source code with syntax highlighting, **edit code in-browser**, **run it**, and **run test cases** — all locally on your machine, no cloud, no signup.
+
+### What You Get
+
+| Feature | What It's For |
+|---------|--------------|
+| Searchable problem list | Find problems by name or filter by difficulty / design pattern |
+| Markdown-rendered README and VARIATIONS | Read the full problem statement and 5 common variations side-by-side with the code |
+| Tabbed code viewer | Switch between `naive/`, `optimized/`, and `concurrent/` versions of every file |
+| **Edit** (Monaco editor) | Modify any file in the browser — your edits stay in memory until refresh |
+| **Run** | Compile and execute the current variant's `Main.java`; stdout/stderr stream back to the page |
+| **Tests** | Run the JSON-defined test cases for a problem (e.g., parking-lot has scenarios pre-defined) |
+| Progress tracker | Mark problems as "studied" — saved in your browser's localStorage |
+| Dark / light theme | Toggle for late-night study |
+| Deep links | `http://localhost:8080/#28-url-shortener` jumps straight to a problem |
+
+### Prerequisites
+
+You need **two** things installed in addition to Java (which you already installed above):
+
+| Tool | Why | Install |
+|------|-----|---------|
+| **Python 3** | Runs `build.py` to scan all problems and generate `data.json` (the data the site reads) | macOS: pre-installed. Ubuntu: `sudo apt install python3`. Windows: https://python.org |
+| **Node 18+** | Runs `server.js` — serves the website AND compiles/runs your code on `Run` / `Tests` clicks | macOS: `brew install node`. Ubuntu: `sudo apt install nodejs`. Windows: https://nodejs.org |
+
+Verify both:
+```bash
+python3 --version    # Python 3.8 or higher
+node --version       # v18 or higher
+java --version       # 17 or higher (already installed)
+```
+
+> **No `npm install` needed.** The Node server uses only built-in modules. The frontend uses CDN-hosted libraries (highlight.js, marked.js, Monaco). Zero dependencies on your machine besides Node + Python + Java.
+
+### Step-by-Step: First-Time Setup
+
+```bash
+cd website
+```
+> **What this does:** Enters the website folder. All commands below assume you're inside `website/`.
+
+```bash
+python3 build.py
+```
+> **What this does:** Scans every `problems/XX-name/` folder, reads each README, VARIATIONS.md, and `.java` source file, and bundles everything into a single `data.json` file the website loads on page load.
+> - Run this **once** initially.
+> - Re-run it any time you edit a problem's source code or markdown on disk and want the website to reflect those changes.
+
+```bash
+node server.js
+```
+> **What this does:** Starts the local server on port 8080. It does two things at once:
+> 1. **Serves static files** — the HTML, CSS, JS, and `data.json` so your browser can load the site.
+> 2. **Exposes `POST /api/run`** — when you click **Run** or **Tests** in the browser, the page sends your code here. The server writes it to a temp directory, runs `javac` + `java`, and streams stdout/stderr/exit code back.
+>
+> Leave this terminal open while you study. `Ctrl+C` to stop.
+
+```bash
+# In your browser:
+open http://localhost:8080
+```
+
+You should see the problem list on the left, a search bar at the top, and the first problem rendered on the right.
+
+### A Suggested Learning Flow
+
+Once the site is running, here's the most effective way to use it:
+
+1. **Pick a problem** from the sidebar (start with [Snake and Ladder](http://localhost:8080/#06-snake-and-ladder), [Tic Tac Toe](http://localhost:8080/#07-tic-tac-toe), or [URL Shortener](http://localhost:8080/#28-url-shortener) — all rated Easy).
+2. **Read the Problem Statement** — every problem now has a verbose, scenario-driven description plus Functional/Non-functional Requirements.
+3. **Open Main.java first** — it's the entry point and shows how the system is *used*, which is the fastest way to grok the API.
+4. **Trace into model/, service/, strategy/** — follow the calls Main makes. The folder names tell you the role (data / business logic / algorithms).
+5. **Click Edit** — change a value, add a print statement, swap a strategy. Click **Run**. See the difference in stdout. This is the single biggest thing that builds intuition.
+6. **Click Tests** (where available) — the test cases assert on stdout / exit code, so you can see exactly what behavior is expected.
+7. **Switch to the `optimized/` tab** — diff it mentally against `naive/`. Read the **Naive vs Optimized** table at the bottom of the problem's README to understand *why* each change was made.
+8. **Open the `concurrent/` tab** — see the race condition the naive version has, and the lock-free / CAS / atomic primitives the concurrent version uses to fix it.
+9. **Read VARIATIONS.md** — 5 common interview variations of the problem with solution sketches. Try one yourself in the editor.
+10. **Mark as studied** — uses the checkbox in the problem header. Resume from where you left off next session.
 
 ---
 
@@ -395,87 +481,6 @@ Use case: producer-consumer pattern — producers `put`, consumers `take`, the q
 7. Try implementing a variation yourself
 
 ---
-
-## Interactive Website (Local Learning Tool)
-
-The repo ships with a **single-page web app** in [website/](website/) that turns this codebase into an interactive learning environment — like LeetCode, but for LLD. You can browse all 50 problems, read the problem statement and patterns, view source code with syntax highlighting, **edit code in-browser**, **run it**, and **run test cases** — all locally on your machine, no cloud, no signup.
-
-### What You Get
-
-| Feature | What It's For |
-|---------|--------------|
-| Searchable problem list | Find problems by name or filter by difficulty / design pattern |
-| Markdown-rendered README and VARIATIONS | Read the full problem statement and 5 common variations side-by-side with the code |
-| Tabbed code viewer | Switch between `naive/`, `optimized/`, and `concurrent/` versions of every file |
-| **Edit** (Monaco editor) | Modify any file in the browser — your edits stay in memory until refresh |
-| **Run** | Compile and execute the current variant's `Main.java`; stdout/stderr stream back to the page |
-| **Tests** | Run the JSON-defined test cases for a problem (e.g., parking-lot has scenarios pre-defined) |
-| Progress tracker | Mark problems as "studied" — saved in your browser's localStorage |
-| Dark / light theme | Toggle for late-night study |
-| Deep links | `http://localhost:8080/#28-url-shortener` jumps straight to a problem |
-
-### Prerequisites
-
-You need **two** things installed in addition to Java (which you already installed above):
-
-| Tool | Why | Install |
-|------|-----|---------|
-| **Python 3** | Runs `build.py` to scan all problems and generate `data.json` (the data the site reads) | macOS: pre-installed. Ubuntu: `sudo apt install python3`. Windows: https://python.org |
-| **Node 18+** | Runs `server.js` — serves the website AND compiles/runs your code on `Run` / `Tests` clicks | macOS: `brew install node`. Ubuntu: `sudo apt install nodejs`. Windows: https://nodejs.org |
-
-Verify both:
-```bash
-python3 --version    # Python 3.8 or higher
-node --version       # v18 or higher
-java --version       # 17 or higher (already installed)
-```
-
-> **No `npm install` needed.** The Node server uses only built-in modules. The frontend uses CDN-hosted libraries (highlight.js, marked.js, Monaco). Zero dependencies on your machine besides Node + Python + Java.
-
-### Step-by-Step: First-Time Setup
-
-```bash
-cd website
-```
-> **What this does:** Enters the website folder. All commands below assume you're inside `website/`.
-
-```bash
-python3 build.py
-```
-> **What this does:** Scans every `problems/XX-name/` folder, reads each README, VARIATIONS.md, and `.java` source file, and bundles everything into a single `data.json` file the website loads on page load.
-> - Run this **once** initially.
-> - Re-run it any time you edit a problem's source code or markdown on disk and want the website to reflect those changes.
-
-```bash
-node server.js
-```
-> **What this does:** Starts the local server on port 8080. It does two things at once:
-> 1. **Serves static files** — the HTML, CSS, JS, and `data.json` so your browser can load the site.
-> 2. **Exposes `POST /api/run`** — when you click **Run** or **Tests** in the browser, the page sends your code here. The server writes it to a temp directory, runs `javac` + `java`, and streams stdout/stderr/exit code back.
->
-> Leave this terminal open while you study. `Ctrl+C` to stop.
-
-```bash
-# In your browser:
-open http://localhost:8080
-```
-
-You should see the problem list on the left, a search bar at the top, and the first problem rendered on the right.
-
-### A Suggested Learning Flow
-
-Once the site is running, here's the most effective way to use it:
-
-1. **Pick a problem** from the sidebar (start with [Snake and Ladder](http://localhost:8080/#06-snake-and-ladder), [Tic Tac Toe](http://localhost:8080/#07-tic-tac-toe), or [URL Shortener](http://localhost:8080/#28-url-shortener) — all rated Easy).
-2. **Read the Problem Statement** — every problem now has a verbose, scenario-driven description plus Functional/Non-functional Requirements.
-3. **Open Main.java first** — it's the entry point and shows how the system is *used*, which is the fastest way to grok the API.
-4. **Trace into model/, service/, strategy/** — follow the calls Main makes. The folder names tell you the role (data / business logic / algorithms).
-5. **Click Edit** — change a value, add a print statement, swap a strategy. Click **Run**. See the difference in stdout. This is the single biggest thing that builds intuition.
-6. **Click Tests** (where available) — the test cases assert on stdout / exit code, so you can see exactly what behavior is expected.
-7. **Switch to the `optimized/` tab** — diff it mentally against `naive/`. Read the **Naive vs Optimized** table at the bottom of the problem's README to understand *why* each change was made.
-8. **Open the `concurrent/` tab** — see the race condition the naive version has, and the lock-free / CAS / atomic primitives the concurrent version uses to fix it.
-9. **Read VARIATIONS.md** — 5 common interview variations of the problem with solution sketches. Try one yourself in the editor.
-10. **Mark as studied** — uses the checkbox in the problem header. Resume from where you left off next session.
 
 ### Read-Only Mode (No Code Execution)
 
