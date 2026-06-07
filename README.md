@@ -1,11 +1,29 @@
 # Low-Level Design Problems in Java
 
-A structured learning repository with **50 Low-Level Design problems**, each with complete, runnable Java code. Built for learners who want to deeply understand object-oriented design, architectural patterns, and clean code practices. 
-
-Hosted @ https://abhj.github.io/lld-learn - **Only UI, cannot run tests here.**
+A structured learning repository with **50 Low-Level Design problems**, each with complete, runnable Java code. Built for learners who want to deeply understand object-oriented design, architectural patterns, and clean code practices.
 
 ---
 
+## The Showcase: Edit. Run. Test. — All in Your Browser.
+
+This repo ships with a **local learning website** (in [website/](website/)) that turns the codebase into an interactive workspace — like LeetCode, but for Low-Level Design. Browse all 50 problems, read the full problem statement and patterns, and **edit + run + test Java code directly in your browser** against your own machine's JDK. No cloud, no signup, no login.
+
+![LLD Problems website showcase — tests running in the browser](website/showcase.svg)
+
+### Run It in 30 Seconds
+
+```bash
+cd website
+python3 build.py     # scans problems/ and builds data.json
+node server.js       # starts the site + the local /api/run endpoint
+open http://localhost:8080
+```
+
+That's it. Click any problem in the sidebar, hit **Edit**, change the code, click **Run** or **Tests**, and watch the output stream back. Detailed setup, prerequisites, and a recommended learning flow are in [Interactive Website (Local Learning Tool)](#interactive-website-local-learning-tool) below.
+
+> **Browse-only (no execution)?** The site is also hosted at **https://abhj.github.io/lld-learn** — you can browse all problems, view code, read tips, but Run/Tests won't work without a local server.
+
+---
 
 ## Interactive Website, With Tests (Local Learning Tool)
 
@@ -317,6 +335,104 @@ This maps to real-world architecture:
 | **L**iskov Substitution | Subclasses can replace their parent anywhere. | `Car` can go anywhere `Vehicle` is expected. |
 | **I**nterface Segregation | Don't force classes to implement methods they don't use. | A `Readable` interface and a `Writable` interface, not one giant `ReadWriteDeleteCopy` interface. |
 | **D**ependency Inversion | Depend on abstractions, not specifics. | `ParkingLot` depends on `PricingStrategy` (interface), not `HourlyPricing` (concrete class). |
+
+---
+
+## LLD Interview Playbook — How to Approach a Coding-Round LLD Question
+
+A 45–60-minute LLD interview is **not** a competitive-programming question. The interviewer is grading three things: (1) can you turn a vague requirement into a clean object model, (2) do you make sensible trade-offs out loud, and (3) is the code you produce extensible? You can ace LeetCode and still fail this round if you start typing too early.
+
+### The 7-Step Framework — Use This for Every Problem
+
+| # | Step | Time | What You Do | What You Say Out Loud |
+|---|------|------|------------|----------------------|
+| 1 | **Clarify scope** | 3–5 min | Ask 3–5 questions to nail down what's in / out of scope. Don't assume. | *"How many vehicle types? Multi-level? Pricing fixed or pluggable? Concurrent entries?"* |
+| 2 | **List functional requirements** | 2 min | Write 4–6 bullets of *what the system does*. Read them back. | *"Park, unpark, calculate fee, find available spot, notify on full."* |
+| 3 | **List non-functional requirements** | 2 min | Scale, concurrency, latency, extensibility. Even one bullet shows seniority. | *"Should support concurrent entries; pricing must be swappable without modifying core."* |
+| 4 | **Identify entities (nouns)** | 5 min | Underline nouns in the requirements. Those are your classes. | *"Vehicle, ParkingSpot, Ticket, Level, ParkingLot, PricingStrategy."* |
+| 5 | **Identify operations (verbs)** | 3 min | Verbs become methods on the right entity. | *"`park` lives on ParkingLot, not Vehicle. `calculatePrice` lives on PricingStrategy."* |
+| 6 | **Sketch the API + classes** | 10 min | Method signatures first. Fields follow. Patterns emerge naturally — don't force them. | *"I'll use Strategy here because pricing is pluggable. Singleton on ParkingLot."* |
+| 7 | **Code the core flow** | 15–20 min | Implement Main + the happy path. Stub edge cases as comments. | *"I'll skip the persistence layer — let me know if you want it."* |
+
+### What Interviewers Actually Score
+
+| Signal | What Earns Points | What Loses Points |
+|--------|------------------|------------------|
+| **Clarification** | Asks 3–5 sharp questions before coding | Starts coding immediately |
+| **Vocabulary** | Says "Strategy", "Open/Closed", "race condition", "linearizability" | Generic "I'll just use a HashMap" without justification |
+| **Trade-offs** | "I picked HashMap over TreeMap because lookups are 10x more frequent than range queries" | Silent choices |
+| **Extensibility** | Adds an interface where future variation is likely (pricing, notifications, matching) | Hard-codes everything as `if/else` chains |
+| **Concurrency awareness** | Spots the race condition unprompted, even if they don't fix it | "Yeah, threads, sure" hand-wave |
+| **Code quality** | Small classes, single responsibility, meaningful names | 200-line god classes named `Manager` |
+| **Honesty** | "I'm not sure — I'd reach for X but verify with a benchmark" | Bluffing |
+
+### Cheat Sheet — Pattern by Symptom
+
+When you hear this in the question, reach for this pattern:
+
+| Requirement signal | Pattern | Real example in this repo |
+|-------------------|---------|--------------------------|
+| "Pluggable rules / algorithms" | **Strategy** | [Parking pricing](problems/01-parking-lot/), [splitwise split](problems/23-splitwise/) |
+| "Different behavior in different states" | **State** | [Elevator](problems/02-elevator-system/), [Vending Machine](problems/04-vending-machine/), [ATM](problems/11-atm-machine/) |
+| "Notify subscribers / listeners" | **Observer** | [Pub-Sub](problems/19-pub-sub-system/), [Auction outbid alerts](problems/24-online-auction/) |
+| "Undo / redo / replay" | **Command** + **Memento** | [Document Editor](problems/43-document-editor/), [Spreadsheet](problems/22-spreadsheet/) |
+| "Tree of things treated uniformly" | **Composite** | [File System](problems/21-file-system/) |
+| "One global instance" | **Singleton** | Use sparingly — only when truly one (logger, config) |
+| "Wrap an object to add behavior" | **Decorator** | [Notification channels](problems/16-notification-system/), [Cache TTL](problems/18-cache-system/) |
+| "Caller shouldn't know which subclass to make" | **Factory** | [Vehicle creation](problems/12-car-rental-system/) |
+| "Build a complex object step by step" | **Builder** | [Pizza Delivery](problems/48-pizza-delivery/) |
+| "Coordinate many objects without N×N coupling" | **Mediator** | [Chat Application](problems/41-chat-application/), [Stock Exchange](problems/25-stock-exchange/) |
+| "Pass request through a series of handlers" | **Chain of Responsibility** | [Payment validation](problems/26-payment-gateway/), [Logger levels](problems/17-logging-framework/) |
+| "Reuse expensive objects" | **Object Pool** | [Connection Pool](problems/30-connection-pool/), [Thread Pool](problems/31-thread-pool/) |
+| "Wrap an incompatible interface" | **Adapter** | Third-party SDKs |
+| "Fixed skeleton, swappable steps" | **Template Method** | [Snake & Ladder](problems/06-snake-and-ladder/), [Blackjack](problems/50-card-game-blackjack/) |
+
+### Top 10 Mistakes to Avoid
+
+1. **Coding before clarifying.** The single most common mistake. Even 60 seconds of clarification saves you 10 minutes of rework.
+2. **God classes named `Manager`, `Helper`, `Util`.** A class with 15 unrelated methods is a violation of SRP and a sign you didn't decompose.
+3. **Inheritance for code reuse.** Use composition. Inherit only when there is genuine *is-a* substitutability (Liskov).
+4. **Premature abstraction.** Don't add a `Strategy` for one algorithm "just in case." Add it when the requirement says "different rules" or the interviewer hints at extension.
+5. **Ignoring concurrency entirely.** If the interviewer mentions "many users", "real-time", or "high traffic", they want to hear *something* about thread safety — at minimum, name the data structure.
+6. **Silent decisions.** Saying nothing while you type makes you look like you're guessing. Narrate: *"I'm picking a `ConcurrentHashMap` here because…"*
+7. **Forgetting the question's verbs.** Every requirement verb (park, unpark, calculate, notify) must map to a method. If it doesn't, you missed a feature.
+8. **Premature optimization.** "I'd use a Bloom filter" before you've drawn a single class is a red flag, not a green one. Get the model right first.
+9. **No `Main` / no demo.** Always end with a runnable `main()` that exercises the happy path. It proves your design *works*, not just that it compiles.
+10. **Defensive null-checks everywhere.** Use `Optional`, immutable objects, and trust internal contracts. Validate at the boundary, not in every method.
+
+### Phrases That Make You Sound Senior
+
+- *"I'd start with the simplest design that satisfies the requirement, then extract a Strategy if the rules need to vary."*
+- *"This is a read-heavy workload, so I'll bias toward a structure with O(1) lookups and accept O(log n) writes."*
+- *"To keep this thread-safe without a global lock, I'd reach for a `ConcurrentHashMap` and CAS on the value."*
+- *"That violates the Open/Closed principle — let me extract an interface here."*
+- *"I'd add an interface even though there's only one implementation today, because the requirement explicitly says 'pluggable'."*
+- *"There's a race condition between checking and inserting — I'd use `putIfAbsent` to make it atomic."*
+- *"I'm trading memory for latency here. If the interviewer cares about footprint, I'd switch to lazy evaluation."*
+- *"That's an instance of the Composite pattern — files and folders are both `FileSystemEntry`."*
+- *"I'd push that responsibility into a separate `NotificationService` — it's not the parking lot's job."*
+- *"For the MVP I'd skip persistence; if asked, I'd add a `Repository` interface and inject it."*
+
+### Time Budget for a 45-Minute Round
+
+| Phase | Time | Output |
+|-------|------|--------|
+| Clarify + requirements | 5 min | A bulleted list both you and the interviewer agree on |
+| Entities + class diagram | 10 min | A whiteboard / shared doc with classes, fields, methods |
+| Core implementation | 20 min | Working `Main` + 2–3 core classes |
+| Walkthrough + edge cases | 5 min | "Here's how I'd handle X… and Y…" |
+| Buffer | 5 min | For follow-ups: "How would you scale this?" |
+
+> **Pro tip:** If you're at minute 20 and still drawing the class diagram, that's *good* — it means you're not coding spaghetti. If you're at minute 20 and 200 lines deep with no design done, that's bad.
+
+### Recommended Practice Order from This Repo
+
+1. **Warm-up (Easy):** [URL Shortener](problems/28-url-shortener/), [Snake & Ladder](problems/06-snake-and-ladder/), [Tic Tac Toe](problems/07-tic-tac-toe/) — small surface, lets you focus on the framework above.
+2. **Bread-and-butter (Medium):** [Parking Lot](problems/01-parking-lot/), [ATM](problems/11-atm-machine/), [Cache System](problems/18-cache-system/), [Rate Limiter](problems/27-rate-limiter/), [Splitwise](problems/23-splitwise/) — these come up in 70% of interviews.
+3. **Concurrency-flavored (Medium-Hard):** [Connection Pool](problems/30-connection-pool/), [Producer-Consumer](problems/32-producer-consumer/), [Thread Pool](problems/31-thread-pool/), [Auction](problems/24-online-auction/), [Payment Gateway](problems/26-payment-gateway/) — the differentiator at senior+.
+4. **Heavy domains (Hard):** [Elevator](problems/02-elevator-system/), [Chess](problems/08-chess-game/), [Stock Exchange](problems/25-stock-exchange/), [Spreadsheet](problems/22-spreadsheet/), [Document Editor](problems/43-document-editor/) — practice these only after you can handle the framework with smaller problems.
+
+For each one: do `naive/` first to get the design right, then `optimized/` to learn the production tricks, then `concurrent/` to learn the thread-safety patterns. Read `VARIATIONS.md` last — it's your interviewer's likely follow-up.
 
 ---
 

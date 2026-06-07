@@ -1,0 +1,13 @@
+# robots.txt for LLD Learn Website
+# This is a private learning/development website - no crawling allowed
+
+User-agent: *
+Disallow: /
+
+# Explicitly disallow common paths
+Disallow: /api/
+Disallow: /.edits/
+Disallow: /data.json
+Disallow: /tests/
+
+# No sitemap (this is not a public site)

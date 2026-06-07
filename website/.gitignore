@@ -1,0 +1,12 @@
+# User edits (local persistence)
+.edits/
+
+# Backup files
+*.backup
+
+# Node modules (if needed in future)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
